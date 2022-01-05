@@ -23,14 +23,9 @@ export default function Navbar() {
             </button>
           </li>
         ) : (
-          <>
-            <li>
-              <NavLink to="/login">Login</NavLink>
-            </li>
-            <li>
-              <NavLink to="/signup">Signup</NavLink>
-            </li>
-          </>
+          <li>
+            <NavLink to="/authenticate">Log In | Sign Up</NavLink>
+          </li>
         )}
       </ul>
     </div>

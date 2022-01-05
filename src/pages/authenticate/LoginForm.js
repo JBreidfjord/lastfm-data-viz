@@ -1,9 +1,7 @@
-import "./Login.css";
-
 import { useLogin } from "../../hooks/useLogin";
 import { useState } from "react";
 
-export default function Login() {
+export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { login, error, isPending } = useLogin();
@@ -15,7 +13,7 @@ export default function Login() {
 
   return (
     <form className="auth-form" onSubmit={handleSubmit}>
-      <h2>Login</h2>
+      <h2>Log In</h2>
       <label>
         <span>Email:</span>
         <input type="email" onChange={(e) => setEmail(e.target.value)} value={email} required />
@@ -36,7 +34,7 @@ export default function Login() {
           Loading
         </button>
       ) : (
-        <button className="btn">Login</button>
+        <button className="btn">Submit</button>
       )}
       {error && <div className="error">{error}</div>}
     </form>
