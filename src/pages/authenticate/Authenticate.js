@@ -10,10 +10,13 @@ export default function Authenticate() {
   return (
     <div className="auth">
       <ul>
-        <li className="tab" onClick={() => setTab("login")}>
+        <li className={`tab ${tab === "login" ? "active" : null}`} onClick={() => setTab("login")}>
           Log In
         </li>
-        <li className="tab" onClick={() => setTab("signup")}>
+        <li
+          className={`tab ${tab === "signup" ? "active" : null}`}
+          onClick={() => setTab("signup")}
+        >
           Sign Up
         </li>
       </ul>

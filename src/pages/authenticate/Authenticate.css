@@ -36,3 +36,9 @@
   cursor: pointer;
   color: var(--heading-color);
 }
+
+.auth .tab.active {
+  background-color: #edecfc;
+  color: var(--primary-color);
+  border-bottom: 1px solid var(--primary-color);
+}
