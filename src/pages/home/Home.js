@@ -2,7 +2,10 @@ import "./Home.css";
 
 import { useEffect, useReducer, useState } from "react";
 
+import { Timestamp } from "firebase/firestore";
 import { useFetch } from "../../hooks/useFetch";
+import { useFirestore } from "../../hooks/useFirestore";
+import { useNavigate } from "react-router-dom";
 
 const infoReducer = (state, action) => {
   switch (action.type) {
@@ -22,8 +25,10 @@ const infoReducer = (state, action) => {
 export default function Home() {
   const [url, setUrl] = useState("");
   const { data, isPending, error } = useFetch(url);
+  const { addDocument, response } = useFirestore("scrobbles");
   const [infoState, dispatch] = useReducer(infoReducer, { page: 0, totalPages: 0, user: "" });
   const [tracks, setTracks] = useState([]);
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -36,6 +41,7 @@ export default function Home() {
     );
   };
 
+  // Handle setting tracks and infoState
   useEffect(() => {
     if (data) {
       const { track: trackList, "@attr": attr } = data["recenttracks"];
@@ -51,6 +57,7 @@ export default function Home() {
     }
   }, [data]);
 
+  // Handle updating url
   useEffect(() => {
     if (infoState.page !== 0 && infoState.page < infoState.totalPages) {
       setUrl(
@@ -61,11 +68,30 @@ export default function Home() {
     }
 
     // TODO: handle cancelling fetch
-    // TODO: store data in firestore
   }, [infoState]);
 
+  // Handle adding data to firestore
+  useEffect(() => {
+    if (infoState.page !== 0 && infoState.page === infoState.totalPages) {
+      addDocument(
+        {
+          lastUpdated: Timestamp.now(),
+          lastUsed: Timestamp.now(),
+          tracks,
+        },
+        infoState.user
+      );
+    }
+  }, [infoState, addDocument, tracks]);
+
+  useEffect(() => {
+    if (response.success) {
+      // update data state
+    }
+  }, [response]);
+
   return (
-    <div>
+    <div className="home">
       <h2>Data Viz</h2>
       <form onSubmit={handleSubmit}>
         <label>
@@ -92,6 +118,14 @@ export default function Home() {
         </p>
       )}
       {error && <div className="error">{error}</div>}
+      {response.success && (
+        <div className="success">
+          <p>Data fetched successfully</p>
+          <button className="btn" onClick={() => navigate("/dashboard")}>
+            Dashboard
+          </button>
+        </div>
+      )}
     </div>
   );
 }
