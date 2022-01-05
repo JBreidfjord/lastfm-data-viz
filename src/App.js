@@ -7,9 +7,11 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Home from "./pages/home/Home";
 import Navbar from "./components/Navbar";
 import { useAuthContext } from "./hooks/useAuthContext";
+import { useState } from "react";
 
 function App() {
   const { authIsReady, user } = useAuthContext();
+  const [scrobbleData, setScrobbleData] = useState({ scrobbles: [], user: null });
 
   return (
     <div className="App">
@@ -18,8 +20,17 @@ function App() {
           <div className="container">
             <Navbar />
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/" element={<Home setScrobbleData={setScrobbleData} />} />
+              <Route
+                path="/dashboard"
+                element={
+                  scrobbleData.user ? (
+                    <Dashboard scrobbleData={scrobbleData} />
+                  ) : (
+                    <Navigate to="/" />
+                  )
+                }
+              />
               <Route path="/authenticate" element={user ? <Navigate to="/" /> : <Authenticate />} />
             </Routes>
           </div>

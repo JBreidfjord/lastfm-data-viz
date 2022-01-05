@@ -22,19 +22,26 @@ const infoReducer = (state, action) => {
   }
 };
 
-export default function Home() {
+export default function Home({ setScrobbleData }) {
   const [url, setUrl] = useState("");
   const { data, isPending, error } = useFetch(url);
   const { addDocument, response } = useFirestore("scrobbles");
   const [infoState, dispatch] = useReducer(infoReducer, { page: 0, totalPages: 0, user: "" });
   const [tracks, setTracks] = useState([]);
+  const [time, setTime] = useState(null);
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    dispatch({ type: "SET_USER", payload: e.target.value });
+    setTracks([]);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     // TODO: check if user data is already in storage
 
+    setTime(Timestamp.now());
     setUrl(
       `http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${infoState.user}` +
         `&api_key=${process.env.REACT_APP_API_KEY}&format=json&limit=200`
@@ -75,20 +82,20 @@ export default function Home() {
     if (infoState.page !== 0 && infoState.page === infoState.totalPages) {
       addDocument(
         {
-          lastUpdated: Timestamp.now(),
+          lastUpdated: time,
           lastUsed: Timestamp.now(),
           tracks,
         },
         infoState.user
       );
     }
-  }, [infoState, addDocument, tracks]);
+  }, [infoState, addDocument, tracks, time]);
 
   useEffect(() => {
     if (response.success) {
-      // update data state
+      setScrobbleData({ scrobbles: tracks, user: infoState.user });
     }
-  }, [response]);
+  }, [response, setScrobbleData, tracks, infoState.user]);
 
   return (
     <div className="home">
@@ -98,7 +105,7 @@ export default function Home() {
           <span>Last.FM Username</span>
           <input
             type="text"
-            onChange={(e) => dispatch({ type: "SET_USER", payload: e.target.value })}
+            onChange={(e) => handleChange(e)}
             value={infoState.user}
             required
             disabled={url && isPending}
