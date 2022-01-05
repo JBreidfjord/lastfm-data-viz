@@ -2,9 +2,11 @@ import "./Navbar.css";
 
 import { NavLink } from "react-router-dom";
 import { useAuthContext } from "../hooks/useAuthContext";
+import { useLogout } from "../hooks/useLogout";
 
 export default function Navbar() {
   const { user } = useAuthContext();
+  const { logout } = useLogout();
 
   return (
     <div className="navbar">
@@ -16,7 +18,9 @@ export default function Navbar() {
         </li>
         {user ? (
           <li>
-            <button className="btn">Logout</button>
+            <button className="btn" onClick={logout}>
+              Logout
+            </button>
           </li>
         ) : (
           <>
