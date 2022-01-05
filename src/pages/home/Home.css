@@ -1,0 +1,9 @@
+.home .success {
+  display: flex;
+}
+
+.home .success p {
+  display: inline-block;
+  margin: auto;
+  margin-left: 0;
+}
