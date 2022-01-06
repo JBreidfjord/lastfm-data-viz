@@ -1,7 +1,8 @@
 import { db, storage } from "../firebase/config";
 import { doc, setDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadString } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useCallback, useEffect, useState } from "react";
+const pako = require("pako");
 
 export const useStorage = () => {
   const [error, setError] = useState(null);
@@ -16,9 +17,11 @@ export const useStorage = () => {
 
     try {
       // Upload JSON to storage
+      const json = JSON.stringify(data);
+      const compressed = pako.deflateRaw(json);
       const uploadRef = ref(storage, `scrobbleFiles/${document.id}/scrobbles.json`);
-      const metadata = { contentType: "text/json" };
-      await uploadString(uploadRef, JSON.stringify(data), "raw", metadata);
+      const metadata = { contentType: "text/json", contentEncoding: "deflate" };
+      await uploadBytes(uploadRef, compressed, metadata);
 
       // Update document
       await setDoc(doc(db, "scrobbles", document.id), document.data);
@@ -41,7 +44,7 @@ export const useStorage = () => {
     setError(null);
 
     try {
-      const downloadRef = ref(storage, `scrobbleFiles/${id}/scrobbles.csv`);
+      const downloadRef = ref(storage, `scrobbleFiles/${id}/scrobbles.json`);
       const downloadUrl = await getDownloadURL(downloadRef);
 
       if (!isCancelled) {
