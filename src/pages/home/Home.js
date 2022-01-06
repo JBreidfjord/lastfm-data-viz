@@ -1,8 +1,9 @@
 import "./Home.css";
 
+import { Timestamp, doc, getDoc } from "firebase/firestore";
 import { useEffect, useReducer, useState } from "react";
 
-import { Timestamp } from "firebase/firestore";
+import { db } from "../../firebase/config";
 import { useCSVStorage } from "../../hooks/useCSVStorage";
 import { useFetch } from "../../hooks/useFetch";
 import { useNavigate } from "react-router-dom";
@@ -19,8 +20,15 @@ const infoReducer = (state, action) => {
 };
 
 export default function Home({ setScrobbleData }) {
-  const { upload, error: storageError, isPending: isStoragePending } = useCSVStorage();
+  const {
+    upload,
+    download,
+    storageData,
+    error: storageError,
+    isPending: isStoragePending,
+  } = useCSVStorage();
   const [isFetching, setIsFetching] = useState(false);
+  const [fetchFromDate, setFetchFromDate] = useState(null);
   const [url, setUrl] = useState("");
   const { data, error: fetchError } = useFetch(url);
   const [infoState, dispatch] = useReducer(infoReducer, { page: 0, totalPages: 0, user: "" });
@@ -33,13 +41,11 @@ export default function Home({ setScrobbleData }) {
     dispatch({ type: "SET_USER", payload: e.target.value });
     setTracks([]);
     setSuccess(false);
+    setFetchFromDate(null);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsFetching(true);
-
-    // TODO: check if user data is already in storage
 
     setTime(Timestamp.now());
     setUrl(
@@ -76,16 +82,38 @@ export default function Home({ setScrobbleData }) {
 
   // Handle updating url
   useEffect(() => {
-    if (infoState.page !== 0 && infoState.page < infoState.totalPages) {
+    if (infoState.page === 1) {
+      // Check if data exists in storage
+      getDoc(doc(db, "scrobbles", infoState.user))
+        .then((doc) => {
+          download(infoState.user);
+          setFetchFromDate(doc.exists() ? doc.data().lastUpdated.seconds : 0);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
+    if (infoState.page !== 0 && infoState.page < infoState.totalPages && fetchFromDate !== null) {
+      // Prevents flickering when user's data is up to date
+      if (infoState.page === 2) {
+        setIsFetching(true);
+      }
       setUrl(
         `http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${infoState.user}` +
           `&api_key=${process.env.REACT_APP_API_KEY}&format=json&limit=200` +
-          `&page=${infoState.page + 1}`
+          `&page=${infoState.page + 1}&from=${fetchFromDate}`
       );
     }
 
     // TODO: handle cancelling fetch
-  }, [infoState]);
+  }, [infoState, fetchFromDate, download]);
+
+  //temp
+  useEffect(() => {
+    if (storageData) {
+      console.log(storageData);
+    }
+  }, [storageData]);
 
   // Handle adding data to storage
   useEffect(() => {
@@ -95,6 +123,10 @@ export default function Home({ setScrobbleData }) {
         id: infoState.user,
         data: { lastUpdated: time, lastUsed: Timestamp.now() },
       });
+      setScrobbleData({ scrobbles: tracks, user: infoState.user });
+      setSuccess(true);
+    } else if (infoState.page > infoState.totalPages) {
+      setIsFetching(false);
       setScrobbleData({ scrobbles: tracks, user: infoState.user });
       setSuccess(true);
     }
