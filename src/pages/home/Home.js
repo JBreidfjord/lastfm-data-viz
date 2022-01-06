@@ -4,9 +4,9 @@ import { Timestamp, doc, getDoc } from "firebase/firestore";
 import { useEffect, useReducer, useState } from "react";
 
 import { db } from "../../firebase/config";
-import { useCSVStorage } from "../../hooks/useCSVStorage";
 import { useFetch } from "../../hooks/useFetch";
 import { useNavigate } from "react-router-dom";
+import { useStorage } from "../../hooks/useStorage";
 
 const initialInfoState = {
   page: 0,
@@ -42,7 +42,7 @@ const infoReducer = (state, action) => {
 };
 
 export default function Home({ setScrobbleData }) {
-  const { upload, error: storageError, isPending: isStoragePending } = useCSVStorage();
+  const { upload, error: storageError, isPending: isStoragePending } = useStorage();
   const [infoState, dispatch] = useReducer(infoReducer, initialInfoState);
   const { data, error: fetchError } = useFetch(infoState.url);
   const [tracks, setTracks] = useState([]);
