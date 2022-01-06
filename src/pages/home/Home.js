@@ -3,18 +3,14 @@ import "./Home.css";
 import { useEffect, useReducer, useState } from "react";
 
 import { Timestamp } from "firebase/firestore";
+import { useCSVStorage } from "../../hooks/useCSVStorage";
 import { useFetch } from "../../hooks/useFetch";
-import { useFirestore } from "../../hooks/useFirestore";
 import { useNavigate } from "react-router-dom";
 
 const infoReducer = (state, action) => {
   switch (action.type) {
     case "SET_USER":
       return { ...state, user: action.payload, page: 0 };
-    case "SET_PAGE":
-      return { ...state, page: action.payload };
-    case "SET_TOTAL_PAGES":
-      return { ...state, totalPages: action.payload };
     case "SET_ALL":
       return { ...state, ...action.payload };
     default:
@@ -23,21 +19,25 @@ const infoReducer = (state, action) => {
 };
 
 export default function Home({ setScrobbleData }) {
+  const { upload, error: storageError, isPending: isStoragePending } = useCSVStorage();
+  const [isFetching, setIsFetching] = useState(false);
   const [url, setUrl] = useState("");
-  const { data, isPending, error } = useFetch(url);
-  const { addDocument, response } = useFirestore("scrobbles");
+  const { data, error: fetchError } = useFetch(url);
   const [infoState, dispatch] = useReducer(infoReducer, { page: 0, totalPages: 0, user: "" });
   const [tracks, setTracks] = useState([]);
   const [time, setTime] = useState(null);
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     dispatch({ type: "SET_USER", payload: e.target.value });
     setTracks([]);
+    setSuccess(false);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIsFetching(true);
 
     // TODO: check if user data is already in storage
 
@@ -60,7 +60,17 @@ export default function Home({ setScrobbleData }) {
           page: parseInt(attr["page"]),
         },
       });
-      setTracks((prevTracks) => [...prevTracks, ...trackList]);
+      setTracks((prevTracks) => [
+        ...prevTracks,
+        ...trackList.map((track) => {
+          return {
+            artist: track.artist["#text"],
+            album: track.album["#text"],
+            title: track.name,
+            date: track.date["uts"],
+          };
+        }),
+      ]);
     }
   }, [data]);
 
@@ -77,25 +87,18 @@ export default function Home({ setScrobbleData }) {
     // TODO: handle cancelling fetch
   }, [infoState]);
 
-  // Handle adding data to firestore
+  // Handle adding data to storage
   useEffect(() => {
-    if (infoState.page !== 0 && infoState.page === infoState.totalPages) {
-      addDocument(
-        {
-          lastUpdated: time,
-          lastUsed: Timestamp.now(),
-          tracks,
-        },
-        infoState.user
-      );
-    }
-  }, [infoState, addDocument, tracks, time]);
-
-  useEffect(() => {
-    if (response.success) {
+    if (infoState.page !== 0 && infoState.page === infoState.totalPages && isFetching) {
+      setIsFetching(false);
+      upload(tracks, {
+        id: infoState.user,
+        data: { lastUpdated: time, lastUsed: Timestamp.now() },
+      });
       setScrobbleData({ scrobbles: tracks, user: infoState.user });
+      setSuccess(true);
     }
-  }, [response, setScrobbleData, tracks, infoState.user]);
+  }, [infoState, tracks, time, upload, isFetching, setScrobbleData]);
 
   return (
     <div className="home">
@@ -108,10 +111,10 @@ export default function Home({ setScrobbleData }) {
             onChange={(e) => handleChange(e)}
             value={infoState.user}
             required
-            disabled={url && isPending}
+            disabled={isFetching}
           />
         </label>
-        {url && isPending ? (
+        {isFetching ? (
           <button className="btn" disabled>
             Fetching...
           </button>
@@ -119,20 +122,41 @@ export default function Home({ setScrobbleData }) {
           <button className="btn">Fetch Data</button>
         )}
       </form>
-      {data && isPending && (
+
+      {data && isFetching && (
         <p>
           Fetching data for {infoState.user}... Page {infoState.page}/{infoState.totalPages}
         </p>
       )}
-      {error && <div className="error">{error}</div>}
-      {response.success && (
+
+      {fetchError && (
+        <div className="error">
+          <p>{fetchError}</p>
+          <button className="btn" onClick={() => setUrl((prevUrl) => prevUrl + "#")}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {storageError && (
+        <div className="error">
+          <p>{storageError}</p>
+          <button className="btn" onClick={() => setTracks((prevTracks) => [...prevTracks])}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {isStoragePending ? (
+        <p>Uploading data...</p>
+      ) : success ? (
         <div className="success">
-          <p>Data fetched successfully</p>
+          <p>Data processed successfully</p>
           <button className="btn" onClick={() => navigate("/dashboard")}>
             Dashboard
           </button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

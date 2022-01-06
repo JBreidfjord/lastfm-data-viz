@@ -7,3 +7,13 @@
   margin: auto;
   margin-left: 0;
 }
+
+.home .error {
+  display: flex;
+}
+
+.home .error p {
+  display: inline-block;
+  margin: auto;
+  margin-left: 0;
+}
