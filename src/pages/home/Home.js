@@ -49,7 +49,7 @@ export default function Home({ setScrobbleData }) {
 
     setTime(Timestamp.now());
     setUrl(
-      `http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${infoState.user}` +
+      `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${infoState.user}` +
         `&api_key=${process.env.REACT_APP_API_KEY}&format=json&limit=200`
     );
   };
@@ -99,7 +99,7 @@ export default function Home({ setScrobbleData }) {
         setIsFetching(true);
       }
       setUrl(
-        `http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${infoState.user}` +
+        `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${infoState.user}` +
           `&api_key=${process.env.REACT_APP_API_KEY}&format=json&limit=200` +
           `&page=${infoState.page + 1}&from=${fetchFromDate}`
       );
