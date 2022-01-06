@@ -18,6 +18,7 @@ const initialInfoState = {
   fetching: false,
   doneFetching: false,
   success: false,
+  previousChecked: false,
 };
 
 const infoReducer = (state, action) => {
@@ -36,13 +37,21 @@ const infoReducer = (state, action) => {
       return { ...state, fetching: false, doneFetching: true };
     case "FINISH_UPLOAD":
       return { ...state, success: true };
+    case "SET_CHECKED":
+      return { ...state, previousChecked: true };
     default:
       return state;
   }
 };
 
 export default function Home({ setScrobbleData }) {
-  const { upload, error: storageError, isPending: isStoragePending } = useStorage();
+  const {
+    upload,
+    download,
+    data: storageData,
+    error: storageError,
+    isPending: isStoragePending,
+  } = useStorage();
   const [infoState, dispatch] = useReducer(infoReducer, initialInfoState);
   const { data, error: fetchError } = useFetch(infoState.url);
   const [tracks, setTracks] = useState([]);
@@ -70,7 +79,9 @@ export default function Home({ setScrobbleData }) {
             fetchFromDate,
           },
         });
-        // TODO: Handle downloading data and setting tracks
+        if (doc.exists()) {
+          download(infoState.user.toLowerCase());
+        }
       })
       .catch((err) => {
         console.log(err);
@@ -78,10 +89,6 @@ export default function Home({ setScrobbleData }) {
 
     setTime(Timestamp.now());
   };
-
-  useEffect(() => {
-    console.log(infoState);
-  }, [infoState]);
 
   useEffect(() => {
     if (data) {
@@ -141,6 +148,13 @@ export default function Home({ setScrobbleData }) {
     upload,
   ]);
 
+  useEffect(() => {
+    if (storageData && !infoState.previousChecked) {
+      setTracks((prevTracks) => [...storageData, ...prevTracks]);
+      dispatch({ type: "SET_CHECKED" });
+    }
+  }, [storageData, infoState.previousChecked]);
+
   return (
     <div className="home">
       <h2>Data Viz</h2>
@@ -193,7 +207,7 @@ export default function Home({ setScrobbleData }) {
       )}
 
       {isStoragePending ? (
-        <p>Uploading data...</p>
+        <p>Transferring data...</p>
       ) : infoState.success ? (
         <div className="success">
           <p>Data processed successfully</p>
