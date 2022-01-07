@@ -1,7 +1,6 @@
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, updateProfile } from "firebase/auth";
 import { useEffect, useState } from "react";
 
-import { auth } from "../firebase/firebase";
 import { useAuthContext } from "./useAuthContext";
 
 export const useSignup = () => {
@@ -15,7 +14,7 @@ export const useSignup = () => {
     setError(null);
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(getAuth(), email, password);
       if (!userCredential.user) {
         throw new Error("Could not complete signup");
       } else {

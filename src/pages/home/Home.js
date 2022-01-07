@@ -3,7 +3,8 @@ import "./Home.css";
 import { Timestamp, doc, getDoc } from "firebase/firestore";
 import { useEffect, useReducer, useState } from "react";
 
-import { db } from "../../firebase/firebase";
+// import { app } from "../../firebase/firebase";
+import { getFirestore } from "firebase/firestore";
 import { useFetch } from "../../hooks/useFetch";
 import { useNavigate } from "react-router-dom";
 import { useStorage } from "../../hooks/useStorage";
@@ -66,7 +67,7 @@ export default function Home({ setScrobbleData }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    getDoc(doc(db, "scrobbles", infoState.user.toLowerCase()))
+    getDoc(doc(getFirestore(), "scrobbles", infoState.user.toLowerCase()))
       .then((doc) => {
         const fetchFromDate = doc.exists() ? doc.data().lastUpdated.seconds : 0;
         dispatch({
