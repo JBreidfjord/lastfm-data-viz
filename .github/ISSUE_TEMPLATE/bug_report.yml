@@ -40,8 +40,8 @@ body:
         1. Logged into/out of account...
         2. On this page...
         3. Doing this action...
-      validations:
-        required: true
+    validations:
+      required: true
   - type: textarea
     attributes:
       label: Additional Info
