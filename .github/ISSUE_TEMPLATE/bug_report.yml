@@ -1,0 +1,50 @@
+name: Bug Report
+description: File a bug report
+title: "[Bug] "
+labels: ["bug", "triage"]
+assignees:
+  - jbreidfjord
+body:
+  - type: textarea
+    attributes:
+      label: Expected Behaviour
+      description: A concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Current Behaviour
+      description: A concise description of what the bug is.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Build
+      description: What build does the bug occur, live or preview?
+      options:
+        - Live
+        - Preview
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Preview PR
+      description: If preview, please reference the associated PR.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Steps to Reproduce
+      description: Steps necessary to have the bug occur.
+      placeholder: |
+        1. Logged into/out of account...
+        2. On this page...
+        3. Doing this action...
+      validations:
+        required: true
+  - type: textarea
+    attributes:
+      label: Additional Info
+      description: Any other info that you think would be useful.
+    validations:
+      required: true
