@@ -1,0 +1,25 @@
+name: Feature Request
+description: Request a new feature
+title: "[Feature] "
+labels: ["feature"]
+assignees:
+  - jbreidfjord
+body:
+  - type: textarea
+    attributes:
+      label: Desired Behaviour
+      description: A description of the behaviour or functionality you want implemented.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Current Behaviour
+      description: Is this a change to an existing behaviour? If so, please describe the changes and how it would be improved.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Additional Info
+      description: Any other info that you think would be useful. If requesting a visual change, consider submitting an image mockup of the change.
+    validations:
+      required: false
