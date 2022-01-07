@@ -1,0 +1,11 @@
+.plot-list {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-gap: 20px;
+}
+
+.plot-list h4 {
+  font-size: 0.9em;
+  color: var(--heading-color);
+}
