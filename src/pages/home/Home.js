@@ -3,7 +3,7 @@ import "./Home.css";
 import { Timestamp, doc, getDoc } from "firebase/firestore";
 import { useEffect, useReducer, useState } from "react";
 
-import { db } from "../../firebase/config";
+import { db } from "../../firebase/firebase";
 import { useFetch } from "../../hooks/useFetch";
 import { useNavigate } from "react-router-dom";
 import { useStorage } from "../../hooks/useStorage";
