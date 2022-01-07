@@ -9,6 +9,8 @@
   --bg-color: #f4f4f4;
   --error-color: red;
   --error-bg-color: pink;
+  --success-color: green;
+  --success-bg-color: lightgreen;
 }
 
 body {
@@ -74,6 +76,15 @@ input {
   color: var(--error-color);
   background: var(--error-bg-color);
   border: 1px solid var(--error-color);
+  border-radius: 4px;
+  padding: 8px;
+  margin: 10px 0;
+}
+
+.success {
+  color: var(--success-color);
+  background: var(--success-bg-color);
+  border: 1px solid var(--success-color);
   border-radius: 4px;
   padding: 8px;
   margin: 10px 0;
