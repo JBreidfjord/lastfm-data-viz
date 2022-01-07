@@ -47,4 +47,4 @@ body:
       label: Additional Info
       description: Any other info that you think would be useful.
     validations:
-      required: true
+      required: false
