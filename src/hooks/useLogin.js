@@ -1,7 +1,6 @@
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useEffect, useState } from "react";
 
-import { auth } from "../firebase/config";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuthContext } from "./useAuthContext";
 
 export const useLogin = () => {
@@ -15,7 +14,7 @@ export const useLogin = () => {
     setError(null);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(getAuth(), email, password);
       if (!userCredential.user) {
         throw new Error("No user found");
       } else {

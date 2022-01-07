@@ -1,7 +1,10 @@
-import { db, storage } from "../firebase/config";
 import { doc, setDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useCallback, useEffect, useState } from "react";
+
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
 const pako = require("pako");
 
 export const useStorage = () => {
@@ -19,12 +22,12 @@ export const useStorage = () => {
       // Upload JSON to storage
       const json = JSON.stringify(data);
       const compressed = pako.deflateRaw(json);
-      const uploadRef = ref(storage, `scrobbleFiles/${document.id}/scrobbles.json`);
+      const uploadRef = ref(getStorage(), `scrobbleFiles/${document.id}/scrobbles.json`);
       const metadata = { contentType: "text/json", contentEncoding: "deflate" };
       await uploadBytes(uploadRef, compressed, metadata);
 
       // Update document
-      await setDoc(doc(db, "scrobbles", document.id), document.data);
+      await setDoc(doc(getFirestore(), "scrobbles", document.id), document.data);
 
       if (!isCancelled) {
         setIsPending(false);
@@ -44,7 +47,7 @@ export const useStorage = () => {
     setError(null);
 
     try {
-      const downloadRef = ref(storage, `scrobbleFiles/${id}/scrobbles.json`);
+      const downloadRef = ref(getStorage(), `scrobbleFiles/${id}/scrobbles.json`);
       const downloadUrl = await getDownloadURL(downloadRef);
 
       if (!isCancelled) {
