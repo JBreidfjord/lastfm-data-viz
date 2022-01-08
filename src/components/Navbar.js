@@ -16,6 +16,11 @@ export default function Navbar() {
             <span>Data Viz</span>
           </NavLink>
         </li>
+        <li>
+          <NavLink to="/dashboard">
+            <span>Dashboard</span>
+          </NavLink>
+        </li>
         {user ? (
           <li>
             <button className="btn" onClick={logout}>
