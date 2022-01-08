@@ -3,7 +3,6 @@ import "./Home.css";
 import { Timestamp, doc, getDoc } from "firebase/firestore";
 import { useEffect, useReducer, useState } from "react";
 
-// import { app } from "../../firebase/firebase";
 import { getFirestore } from "firebase/firestore";
 import { useFetch } from "../../hooks/useFetch";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +17,6 @@ const initialInfoState = {
   fetchFromDate: 0,
   fetching: false,
   doneFetching: false,
-  success: false,
   previousChecked: false,
 };
 
@@ -36,8 +34,6 @@ const infoReducer = (state, action) => {
       return { ...state, fetching: true, doneFetching: false };
     case "FINISH_FETCH":
       return { ...state, fetching: false, doneFetching: true };
-    case "FINISH_UPLOAD":
-      return { ...state, success: true };
     case "SET_CHECKED":
       return { ...state, previousChecked: true };
     default:
@@ -45,7 +41,7 @@ const infoReducer = (state, action) => {
   }
 };
 
-export default function Home({ setScrobbleData }) {
+export default function Home({ setScrobbleData, scrobbleData }) {
   const {
     upload,
     download,
@@ -88,6 +84,7 @@ export default function Home({ setScrobbleData }) {
         console.log(err);
       });
 
+    dispatch({ type: "SET_CHECKED" });
     setTime(Timestamp.now());
   };
 
@@ -131,30 +128,35 @@ export default function Home({ setScrobbleData }) {
   }, [data, infoState.user, infoState.fetchFromDate]);
 
   useEffect(() => {
-    if (infoState.doneFetching && !infoState.success) {
+    if (
+      infoState.doneFetching &&
+      !scrobbleData.user &&
+      infoState.previousChecked &&
+      !isStoragePending
+    ) {
       upload(tracks, {
         id: infoState.user.toLowerCase(),
         data: { lastUpdated: time, lastUsed: Timestamp.now() },
       });
       setScrobbleData({ scrobbles: tracks, user: infoState.user });
-      dispatch({ type: "FINISH_UPLOAD" });
     }
   }, [
     infoState.user,
     infoState.doneFetching,
-    infoState.success,
+    infoState.previousChecked,
+    isStoragePending,
     tracks,
     time,
+    scrobbleData.user,
     setScrobbleData,
     upload,
   ]);
 
   useEffect(() => {
-    if (storageData && !infoState.previousChecked) {
+    if (storageData) {
       setTracks((prevTracks) => [...storageData, ...prevTracks]);
-      dispatch({ type: "SET_CHECKED" });
     }
-  }, [storageData, infoState.previousChecked]);
+  }, [storageData]);
 
   return (
     <div className="home">
@@ -207,16 +209,16 @@ export default function Home({ setScrobbleData }) {
         </div>
       )}
 
-      {isStoragePending ? (
-        <p>Transferring data...</p>
-      ) : infoState.success ? (
+      {isStoragePending && <p>Transferring data...</p>}
+
+      {scrobbleData.user && (
         <div className="success">
           <p>Data processed successfully</p>
           <button className="btn" onClick={() => navigate("/dashboard")}>
             Dashboard
           </button>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
