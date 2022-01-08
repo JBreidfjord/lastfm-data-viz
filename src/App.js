@@ -20,7 +20,10 @@ function App() {
           <div className="container">
             <Navbar />
             <Routes>
-              <Route path="/" element={<Home setScrobbleData={setScrobbleData} />} />
+              <Route
+                path="/"
+                element={<Home setScrobbleData={setScrobbleData} scrobbleData={scrobbleData} />}
+              />
               <Route
                 path="/dashboard"
                 element={
