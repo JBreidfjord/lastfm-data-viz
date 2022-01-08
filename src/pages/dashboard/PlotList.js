@@ -1,9 +1,9 @@
 import "./PlotList.css";
 
-import Mainstream from "./plots/Mainstream";
+import ArtistAlbumPie from "./plots/ArtistAlbumPie";
 
 export default function PlotList({ data }) {
-  const plots = [<Mainstream data={data} />];
+  const plots = [<ArtistAlbumPie data={data} />];
 
   return (
     <div className="plot-list">
