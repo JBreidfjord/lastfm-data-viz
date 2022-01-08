@@ -103,6 +103,12 @@ export default function Home({ setScrobbleData, scrobbleData }) {
         if (attr["page"] === "1") {
           dispatch({ type: "START_FETCH" });
         }
+        // Check if a song is currently being played, remove it if so
+        if (trackList[0]["@attr"]) {
+          if (trackList[0]["@attr"]["nowplaying"] === "true") {
+            trackList.splice(0, 1);
+          }
+        }
         dispatch({
           type: "SET_URL",
           payload:
