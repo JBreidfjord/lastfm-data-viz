@@ -1,9 +1,6 @@
-import { doc, setDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { doc, getFirestore, setDoc } from "firebase/firestore";
+import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import { useCallback, useEffect, useState } from "react";
-
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
 
 const pako = require("pako");
 
