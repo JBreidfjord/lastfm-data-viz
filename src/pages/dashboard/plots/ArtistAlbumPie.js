@@ -11,6 +11,8 @@ import { scaleOrdinal } from "@visx/scale";
 export default function ArtistAlbumPie({ data, width, height }) {
   const [artists, setArtists] = useState(null);
   const [albums, setAlbums] = useState(null);
+  const [activeArtists, setActiveArtists] = useState(null);
+  const [activeAlbums, setActiveAlbums] = useState(null);
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [getArtistColor, setGetArtistColor] = useState(null);
   const [getAlbumColor, setGetAlbumColor] = useState(null);
@@ -67,22 +69,45 @@ export default function ArtistAlbumPie({ data, width, height }) {
         return acc;
       }, []);
 
-    setGetArtistColor(() =>
-      scaleOrdinal({
-        domain: artists.map(({ name }) => name),
-        range: [...Array(n).keys()].map((i) => `rgba(255, 255, 255, ${(i + 1) / n / 1.75})`),
-      })
-    );
-    setGetAlbumColor(() =>
-      scaleOrdinal({
-        domain: albums.slice(-n).map(({ title }) => title),
-        range: [...Array(n).keys()].map((i) => `rgba(0, 0, 0, ${(i + 1) / n / 1.75})`),
-      })
-    );
-
     setArtists(artists);
     setAlbums(albums);
   }, [data]);
+
+  const handleClick = (artist) => {
+    if (animate) {
+      setSelectedArtist(selectedArtist && selectedArtist === artist ? null : artist);
+    }
+  };
+
+  useEffect(() => {
+    if (artists && albums) {
+      setActiveArtists(
+        selectedArtist ? artists.filter(({ name }) => name === selectedArtist) : artists.slice(-n)
+      );
+      setActiveAlbums(
+        selectedArtist
+          ? albums.filter(({ artist }) => artist === selectedArtist).slice(-n)
+          : albums.slice(-n)
+      );
+    }
+  }, [selectedArtist, artists, albums]);
+
+  useEffect(() => {
+    if (activeArtists && activeAlbums) {
+      setGetArtistColor(() =>
+        scaleOrdinal({
+          domain: activeArtists.map(({ name }) => name),
+          range: [...Array(n).keys()].map((i) => `rgba(255, 255, 255, ${(i + 1) / n / 1.75})`),
+        })
+      );
+      setGetAlbumColor(() =>
+        scaleOrdinal({
+          domain: activeAlbums.map(({ title }) => title),
+          range: [...Array(n).keys()].map((i) => `rgba(0, 0, 0, ${(i + 1) / n / 1.75})`),
+        })
+      );
+    }
+  }, [activeArtists, activeAlbums]);
 
   const handleMouseOver = (e, key, percent) => {
     const coords = localPoint(e.target.ownerSVGElement, e);
@@ -114,7 +139,7 @@ export default function ArtistAlbumPie({ data, width, height }) {
   const centerY = innerHeight / 2;
   const donutThickness = 40;
 
-  return artists && albums ? (
+  return activeArtists && activeAlbums && getArtistColor && getAlbumColor ? (
     <div className="plot">
       <svg width={width} height={height}>
         <GradientSteelPurple id="album-artist-pie-gradient" />
@@ -137,10 +162,7 @@ export default function ArtistAlbumPie({ data, width, height }) {
                 {...pie}
                 animate={animate}
                 getKey={(arc) => arc.data.name}
-                onClickDatum={({ data: { name } }) =>
-                  animate &&
-                  setSelectedArtist(selectedArtist && selectedArtist === name ? null : name)
-                }
+                onClickDatum={({ data: { name } }) => handleClick(name)}
                 getColor={(arc) => getArtistColor(arc.data.name)}
                 onMouseOverDatum={(e, { data: { name, percent } }) => {
                   handleMouseOver(e, name, percent.toPrecision(3));
@@ -165,10 +187,7 @@ export default function ArtistAlbumPie({ data, width, height }) {
                 animate={animate}
                 getKey={({ data: { title } }) => title}
                 getColor={({ data: { title } }) => getAlbumColor(title)}
-                onClickDatum={({ data: { artist } }) =>
-                  animate &&
-                  setSelectedArtist(selectedArtist && selectedArtist === artist ? null : artist)
-                }
+                onClickDatum={({ data: { artist } }) => handleClick(artist)}
                 onMouseOverDatum={(e, { data: { title, artist, percent } }) => {
                   handleMouseOver(
                     e,
