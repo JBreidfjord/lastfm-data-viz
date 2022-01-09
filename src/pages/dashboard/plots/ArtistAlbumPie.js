@@ -1,12 +1,18 @@
+import { animated, to, useTransition } from "react-spring";
 import { useEffect, useState } from "react";
 
+import { GradientPinkBlue } from "@visx/gradient";
 import { Group } from "@visx/group";
 import { Pie } from "@visx/shape";
-import { Text } from "@visx/text";
+import { scaleOrdinal } from "@visx/scale";
 
 export default function ArtistAlbumPie({ data }) {
   const [artists, setArtists] = useState(null);
   const [albums, setAlbums] = useState(null);
+  const [selectedArtist, setSelectedArtist] = useState(null);
+  const [getArtistColor, setGetArtistColor] = useState(null);
+  const [getAlbumColor, setGetAlbumColor] = useState(null);
+
   const n = 10;
 
   useEffect(() => {
@@ -57,77 +63,142 @@ export default function ArtistAlbumPie({ data }) {
         });
         return acc;
       }, []);
+
+    setGetArtistColor(() =>
+      scaleOrdinal({
+        domain: artists.map(({ name }) => name),
+        range: [...Array(n).keys()].map((i) => `rgba(255, 255, 255, ${i / n})`),
+      })
+    );
+    setGetAlbumColor(() =>
+      scaleOrdinal({
+        domain: albums.slice(-n).map(({ title }) => title),
+        range: [...Array(n).keys()].map((i) => `rgba(255, 255, 255, ${i / n})`),
+      })
+    );
+
     setArtists(artists);
     setAlbums(albums);
   }, [data]);
 
+  const animate = true;
   const width = 400;
-  const half = width / 2;
+  const height = 400;
+  const margin = { left: 20, top: 20, right: 20, bottom: 20 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+  const radius = Math.min(innerWidth, innerHeight) / 2;
+  const centerX = innerWidth / 2;
+  const centerY = innerHeight / 2;
+  const donutThickness = 20;
 
-  return (
-    <>
-      {artists && totalPercent && (
-        <>
-          <h4>Artist Pie</h4>
-          <svg width={width} height={width}>
-            <Group top={half} left={half}>
-              <Pie
-                data={artists}
-                pieValue={(artist) => artist.percent}
-                outerRadius={half}
-                innerRadius={({ data }) => {
-                  const size = active && active.name === data.name ? half * 0.06 : half * 0.04;
-                  return half - size;
-                }}
-                padAngle={0.01}
-              >
-                {(pie) => {
-                  return pie.arcs.map((arc) => {
-                    return (
-                      <g
-                        key={arc.data.name}
-                        onMouseEnter={() => setActive(arc.data)}
-                        onMouseLeave={() => setActive(null)}
-                      >
-                        <path
-                          d={pie.path(arc)}
-                          fill={`hsl(${240 - (arc.data.percent / totalPercent) * 360}, 100%, 50%)`}
-                        />
-                      </g>
-                    );
-                  });
-                }}
-              </Pie>
-
-              {active ? (
-                <>
-                  <Text
-                    textAnchor="middle"
-                    verticalAnchor="middle"
-                    width={width / 2}
-                    dy={-width / 10}
-                    scaleToFit="shrink-only"
-                  >
-                    {active.name}
-                  </Text>
-                  <Text textAnchor="middle" verticalAnchor="middle" width={width / 2}>
-                    {active.percent.toPrecision(3) + "%"}
-                  </Text>
-                </>
-              ) : (
-                <Text
-                  textAnchor="middle"
-                  verticalAnchor="middle"
-                  width={width / 2}
-                  scaleToFit="shrink-only"
-                >
-                  Artists
-                </Text>
-              )}
-            </Group>
-          </svg>
-        </>
-      )}
-    </>
-  );
+  return artists && albums ? (
+    <svg width={width} height={height}>
+      <GradientPinkBlue id="gradient" />
+      <rect rx={14} width={width} height={height} fill="url('#gradient')" />
+      <Group top={centerY + margin.top} left={centerX + margin.left}>
+        <Pie
+          data={selectedArtist ? artists.filter(({ name }) => name === selectedArtist) : artists}
+          pieValue={(artist) => artist.percent}
+          outerRadius={radius}
+          innerRadius={radius - donutThickness}
+          cornerRadius={3}
+          padAngle={0.005}
+        >
+          {(pie) => (
+            <AnimatedPie
+              {...pie}
+              animate={animate}
+              getKey={(arc) => arc.data.name}
+              onClickDatum={({ data: { name } }) =>
+                animate &&
+                setSelectedArtist(selectedArtist && selectedArtist === name ? null : name)
+              }
+              getColor={(arc) => getArtistColor(arc.data.name)}
+            />
+          )}
+        </Pie>
+        <Pie
+          data={
+            selectedArtist
+              ? albums.filter(({ artist }) => artist === selectedArtist).slice(-n)
+              : albums.slice(-n)
+          }
+          pieValue={(album) => album.percent}
+          pieSortValues={() => -1}
+          outerRadius={radius - donutThickness * 1.3}
+        >
+          {(pie) => (
+            <AnimatedPie
+              {...pie}
+              animate={animate}
+              getKey={({ data: { title } }) => title}
+              getColor={({ data: { title } }) => getAlbumColor(title)}
+            />
+          )}
+        </Pie>
+      </Group>
+    </svg>
+  ) : null;
 }
+
+// react-spring transition definitions
+const fromLeaveTransition = ({ endAngle }) => ({
+  // enter from 360° if end angle is > 180°
+  startAngle: endAngle > Math.PI ? 2 * Math.PI : 0,
+  endAngle: endAngle > Math.PI ? 2 * Math.PI : 0,
+  opacity: 0,
+});
+
+const enterUpdateTransition = ({ startAngle, endAngle }) => ({
+  startAngle,
+  endAngle,
+  opacity: 1,
+});
+
+const AnimatedPie = ({ animate, arcs, path, getKey, getColor, onClickDatum }) => {
+  const transitions = useTransition(arcs, {
+    from: animate ? fromLeaveTransition : enterUpdateTransition,
+    enter: enterUpdateTransition,
+    update: enterUpdateTransition,
+    leave: animate ? fromLeaveTransition : enterUpdateTransition,
+    keys: getKey,
+  });
+  return transitions((props, arc, { key }) => {
+    const [centroidX, centroidY] = path.centroid(arc);
+    const hasSpaceForName = arc.endAngle - arc.startAngle >= 0.1;
+
+    return (
+      <g key={key}>
+        <animated.path
+          // compute interpolated path d attribute from intermediate angle values
+          d={to([props.startAngle, props.endAngle], (startAngle, endAngle) =>
+            path({
+              ...arc,
+              startAngle,
+              endAngle,
+            })
+          )}
+          fill={getColor(arc)}
+          onClick={() => onClickDatum(arc)}
+          onTouchStart={() => onClickDatum(arc)}
+        />
+        {hasSpaceForName && (
+          <animated.g style={{ opacity: props.opacity }}>
+            <text
+              fill="white"
+              x={centroidX}
+              y={centroidY}
+              dy="0.33em"
+              fontSize={9}
+              textAnchor="middle"
+              pointerEvents="none"
+            >
+              {getKey(arc)}
+            </text>
+          </animated.g>
+        )}
+      </g>
+    );
+  });
+};
