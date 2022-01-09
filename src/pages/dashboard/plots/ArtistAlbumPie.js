@@ -6,22 +6,29 @@ import { Text } from "@visx/text";
 
 export default function ArtistAlbumPie({ data }) {
   const [artists, setArtists] = useState(null);
-  const [active, setActive] = useState(null);
-  const [totalPercent, setTotalPercent] = useState(null);
+  const [albums, setAlbums] = useState(null);
+  const n = 10;
 
   useEffect(() => {
     let artists = {};
-    // Get total scrobbles for each artist
+    let albums = {};
+
+    // Get total scrobbles for each artist and album
     data.scrobbles.forEach((scrobble) => {
       if (artists[scrobble.artist]) {
         artists[scrobble.artist]["scrobbles"]++;
       } else {
         artists[scrobble.artist] = { scrobbles: 1 };
       }
+
+      if (albums[scrobble.album]) {
+        albums[scrobble.album]["scrobbles"]++;
+      } else {
+        albums[scrobble.album] = { scrobbles: 1, artist: scrobble.artist };
+      }
     });
 
     // Reduce to array of top n artists
-    const n = 25;
     artists = Object.entries(artists)
       .sort((a, b) => {
         return a[1]["scrobbles"] - b[1]["scrobbles"];
@@ -36,8 +43,22 @@ export default function ArtistAlbumPie({ data }) {
         return acc;
       }, []);
 
+    // Move albums to sorted array, all albums are kept to display for a selected artist
+    albums = Object.entries(albums)
+      .sort((a, b) => {
+        return a[1]["scrobbles"] - b[1]["scrobbles"];
+      })
+      .reduce((acc, [albumName, { scrobbles, artist }]) => {
+        acc.push({
+          title: albumName,
+          artist,
+          scrobbles,
+          percent: (scrobbles / data.scrobbles.length) * 100,
+        });
+        return acc;
+      }, []);
     setArtists(artists);
-    setTotalPercent(artists.reduce((acc, { percent }) => acc + percent, 0));
+    setAlbums(albums);
   }, [data]);
 
   const width = 400;
