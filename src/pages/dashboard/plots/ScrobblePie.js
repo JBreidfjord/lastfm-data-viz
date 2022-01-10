@@ -37,16 +37,25 @@ export default function ScrobblePie({ data, width, height }) {
         artists[scrobble.artist] = { scrobbles: 1 };
       }
 
-      if (albums[scrobble.album]) {
-        albums[scrobble.album]["scrobbles"]++;
+      if (albums[scrobble.album + scrobble.artist]) {
+        albums[scrobble.album + scrobble.artist]["scrobbles"]++;
       } else {
-        albums[scrobble.album] = { scrobbles: 1, artist: scrobble.artist };
+        albums[scrobble.album + scrobble.artist] = {
+          scrobbles: 1,
+          artist: scrobble.artist,
+          title: scrobble.album,
+        };
       }
 
-      if (tracks[scrobble.title]) {
-        tracks[scrobble.title]["scrobbles"]++;
+      if (tracks[scrobble.title + scrobble.artist]) {
+        tracks[scrobble.title + scrobble.artist]["scrobbles"]++;
       } else {
-        tracks[scrobble.title] = { scrobbles: 1, artist: scrobble.artist, album: scrobble.album };
+        tracks[scrobble.title + scrobble.artist] = {
+          scrobbles: 1,
+          artist: scrobble.artist,
+          album: scrobble.album,
+          title: scrobble.title,
+        };
       }
     });
 
@@ -67,9 +76,9 @@ export default function ScrobblePie({ data, width, height }) {
     // Move albums to sorted array
     albums = Object.entries(albums)
       .sort(sortKey)
-      .reduce((acc, [albumName, { scrobbles, artist }]) => {
+      .reduce((acc, [_, { scrobbles, artist, title }]) => {
         acc.push({
-          title: albumName,
+          title,
           artist,
           scrobbles,
           percent: (scrobbles / data.scrobbles.length) * 100,
@@ -80,7 +89,7 @@ export default function ScrobblePie({ data, width, height }) {
     // Move tracks to sorted array
     tracks = Object.entries(tracks)
       .sort(sortKey)
-      .reduce((acc, [title, { scrobbles, artist, album }]) => {
+      .reduce((acc, [_, { scrobbles, artist, album, title }]) => {
         acc.push({
           title,
           artist,
