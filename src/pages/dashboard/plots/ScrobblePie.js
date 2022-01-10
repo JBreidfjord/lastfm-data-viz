@@ -8,7 +8,7 @@ import { Pie } from "@visx/shape";
 import { localPoint } from "@visx/event";
 import { scaleOrdinal } from "@visx/scale";
 
-export default function ArtistAlbumPie({ data, width, height }) {
+export default function ScrobblePie({ data, width, height }) {
   const [artists, setArtists] = useState(null);
   const [albums, setAlbums] = useState(null);
   const [activeArtists, setActiveArtists] = useState(null);

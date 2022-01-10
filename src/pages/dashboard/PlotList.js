@@ -1,12 +1,12 @@
 import "./PlotList.css";
 
-import ArtistAlbumPie from "./plots/ArtistAlbumPie";
 import { ParentSize } from "@visx/responsive";
+import ScrobblePie from "./plots/ScrobblePie";
 
 export default function PlotList({ data }) {
   const plots = [
     <ParentSize>
-      {({ width, height }) => <ArtistAlbumPie data={data} width={width} height={height} />}
+      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
     </ParentSize>,
   ];
   return (
