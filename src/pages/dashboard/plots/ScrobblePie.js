@@ -11,11 +11,14 @@ import { scaleOrdinal } from "@visx/scale";
 export default function ScrobblePie({ data, width, height }) {
   const [artists, setArtists] = useState(null);
   const [albums, setAlbums] = useState(null);
+  const [tracks, setTracks] = useState(null);
   const [activeArtists, setActiveArtists] = useState(null);
   const [activeAlbums, setActiveAlbums] = useState(null);
+  const [activeTracks, setActiveTracks] = useState(null);
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [getArtistColor, setGetArtistColor] = useState(null);
   const [getAlbumColor, setGetAlbumColor] = useState(null);
+  const [getTrackColor, setGetTrackColor] = useState(null);
   const { showTooltip, hideTooltip, tooltipLeft, tooltipTop, tooltipData, tooltipOpen } =
     useTooltip();
 
@@ -24,8 +27,9 @@ export default function ScrobblePie({ data, width, height }) {
   useEffect(() => {
     let artists = {};
     let albums = {};
+    let tracks = {};
 
-    // Get total scrobbles for each artist and album
+    // Get total scrobbles for each artist, album, and track
     data.scrobbles.forEach((scrobble) => {
       if (artists[scrobble.artist]) {
         artists[scrobble.artist]["scrobbles"]++;
@@ -38,13 +42,19 @@ export default function ScrobblePie({ data, width, height }) {
       } else {
         albums[scrobble.album] = { scrobbles: 1, artist: scrobble.artist };
       }
+
+      if (tracks[scrobble.title]) {
+        tracks[scrobble.title]["scrobbles"]++;
+      } else {
+        tracks[scrobble.title] = { scrobbles: 1, artist: scrobble.artist, album: scrobble.album };
+      }
     });
+
+    const sortKey = (a, b) => a[1]["scrobbles"] - b[1]["scrobbles"];
 
     // Move artists to sorted array
     artists = Object.entries(artists)
-      .sort((a, b) => {
-        return a[1]["scrobbles"] - b[1]["scrobbles"];
-      })
+      .sort(sortKey)
       .reduce((acc, [artistName, { scrobbles }]) => {
         acc.push({
           name: artistName,
@@ -56,9 +66,7 @@ export default function ScrobblePie({ data, width, height }) {
 
     // Move albums to sorted array
     albums = Object.entries(albums)
-      .sort((a, b) => {
-        return a[1]["scrobbles"] - b[1]["scrobbles"];
-      })
+      .sort(sortKey)
       .reduce((acc, [albumName, { scrobbles, artist }]) => {
         acc.push({
           title: albumName,
@@ -69,8 +77,23 @@ export default function ScrobblePie({ data, width, height }) {
         return acc;
       }, []);
 
+    // Move tracks to sorted array
+    tracks = Object.entries(tracks)
+      .sort(sortKey)
+      .reduce((acc, [title, { scrobbles, artist, album }]) => {
+        acc.push({
+          title,
+          artist,
+          album,
+          scrobbles,
+          percent: (scrobbles / data.scrobbles.length) * 100,
+        });
+        return acc;
+      }, []);
+
     setArtists(artists);
     setAlbums(albums);
+    setTracks(tracks);
   }, [data]);
 
   const handleClick = (artist) => {
@@ -80,7 +103,7 @@ export default function ScrobblePie({ data, width, height }) {
   };
 
   useEffect(() => {
-    if (artists && albums) {
+    if (artists && albums && tracks) {
       setActiveArtists(
         selectedArtist ? artists.filter(({ name }) => name === selectedArtist) : artists.slice(-n)
       );
@@ -89,25 +112,42 @@ export default function ScrobblePie({ data, width, height }) {
           ? albums.filter(({ artist }) => artist === selectedArtist).slice(-n)
           : albums.slice(-n)
       );
+      setActiveTracks(
+        selectedArtist
+          ? tracks.filter(({ artist }) => artist === selectedArtist).slice(-n)
+          : tracks.slice(-n)
+      );
     }
-  }, [selectedArtist, artists, albums]);
+  }, [selectedArtist, artists, albums, tracks]);
 
   useEffect(() => {
-    if (activeArtists && activeAlbums) {
+    if (activeArtists && activeAlbums && activeTracks) {
       setGetArtistColor(() =>
         scaleOrdinal({
           domain: activeArtists.map(({ name }) => name),
-          range: [...Array(n).keys()].map((i) => `rgba(255, 255, 255, ${(i + 1) / n / 1.75})`),
+          range: [...Array(activeArtists.length).keys()].map(
+            (i) => `rgba(225, 225, 225, ${(i + 1) / activeArtists.length / 1.5})`
+          ),
         })
       );
       setGetAlbumColor(() =>
         scaleOrdinal({
           domain: activeAlbums.map(({ title }) => title),
-          range: [...Array(n).keys()].map((i) => `rgba(0, 0, 0, ${(i + 1) / n / 1.75})`),
+          range: [...Array(activeAlbums.length).keys()].map(
+            (i) => `rgba(50, 50, 50, ${(i + 1) / activeAlbums.length / 1.5})`
+          ),
+        })
+      );
+      setGetTrackColor(() =>
+        scaleOrdinal({
+          domain: activeTracks.map(({ title }) => title),
+          range: [...Array(activeTracks.length).keys()].map(
+            (i) => `rgba(0, 0, 0, ${(i + 1) / activeTracks.length / 1.5})`
+          ),
         })
       );
     }
-  }, [activeArtists, activeAlbums]);
+  }, [activeArtists, activeAlbums, activeTracks]);
 
   const handleMouseOver = (e, key, percent) => {
     const coords = localPoint(e.target.ownerSVGElement, e);
@@ -137,7 +177,9 @@ export default function ScrobblePie({ data, width, height }) {
   const radius = Math.min(innerWidth, innerHeight) / 2;
   const centerX = innerWidth / 2;
   const centerY = innerHeight / 2;
-  const donutThickness = 40;
+  const outerDonutThickness = 40;
+  const innerDonutThickness = 40;
+  const gapSize = 10;
 
   return activeArtists && activeAlbums && getArtistColor && getAlbumColor ? (
     <div className="plot">
@@ -145,6 +187,7 @@ export default function ScrobblePie({ data, width, height }) {
         <GradientSteelPurple id="album-artist-pie-gradient" />
         <rect rx={14} width={width} height={height} fill="url('#album-artist-pie-gradient')" />
         <Group top={centerY + margin.top} left={centerX + margin.left}>
+          {/* Artists - Outer Donut */}
           <Pie
             data={
               selectedArtist
@@ -153,7 +196,7 @@ export default function ScrobblePie({ data, width, height }) {
             }
             pieValue={(artist) => artist.percent}
             outerRadius={radius}
-            innerRadius={radius - donutThickness}
+            innerRadius={radius - outerDonutThickness}
             cornerRadius={3}
             padAngle={0.005}
           >
@@ -171,6 +214,8 @@ export default function ScrobblePie({ data, width, height }) {
               />
             )}
           </Pie>
+
+          {/* Albums - Inner Donut */}
           <Pie
             data={
               selectedArtist
@@ -178,15 +223,46 @@ export default function ScrobblePie({ data, width, height }) {
                 : albums.slice(-n)
             }
             pieValue={(album) => album.percent}
-            pieSortValues={() => -1}
-            outerRadius={radius - donutThickness * 1.3}
+            outerRadius={radius - outerDonutThickness - gapSize}
+            innerRadius={radius - outerDonutThickness - gapSize - innerDonutThickness}
+            cornerRadius={3}
+            padAngle={0.005}
+          >
+            {(pie) => (
+              <AnimatedPie
+                {...pie}
+                animate={animate}
+                getKey={(arc) => arc.data.title}
+                getColor={(arc) => getAlbumColor(arc.data.title)}
+                onClickDatum={({ data: { artist } }) => handleClick(artist)}
+                onMouseOverDatum={(e, { data: { title, artist, percent } }) => {
+                  handleMouseOver(
+                    e,
+                    selectedArtist ? title : `${title} - ${artist}`,
+                    percent.toPrecision(3)
+                  );
+                }}
+                onMouseLeave={hideTooltip}
+              />
+            )}
+          </Pie>
+
+          {/* Tracks - Inner Circle */}
+          <Pie
+            data={
+              selectedArtist
+                ? tracks.filter(({ artist }) => artist === selectedArtist).slice(-n)
+                : tracks.slice(-n)
+            }
+            pieValue={(album) => album.percent}
+            outerRadius={radius - outerDonutThickness - innerDonutThickness - gapSize * 2}
           >
             {(pie) => (
               <AnimatedPie
                 {...pie}
                 animate={animate}
                 getKey={({ data: { title } }) => title}
-                getColor={({ data: { title } }) => getAlbumColor(title)}
+                getColor={({ data: { title } }) => getTrackColor(title)}
                 onClickDatum={({ data: { artist } }) => handleClick(artist)}
                 onMouseOverDatum={(e, { data: { title, artist, percent } }) => {
                   handleMouseOver(
