@@ -164,7 +164,6 @@ export default function ScrobblePie({ data, width, height }) {
   }, [activeArtists, activeAlbums, activeTracks]);
 
   const handleMouseOver = (e, data, type) => {
-    console.log(data);
     const coords = localPoint(e.target.ownerSVGElement, e);
     let tooltipData;
     switch (type) {
@@ -269,7 +268,7 @@ export default function ScrobblePie({ data, width, height }) {
   const gapSize = 10;
 
   return activeArtists && activeAlbums && getArtistColor && getAlbumColor ? (
-    <div className="plot">
+    <div>
       <svg width={width} height={height}>
         <GradientSteelPurple id="album-artist-pie-gradient" />
         <rect rx={14} width={width} height={height} fill="url('#album-artist-pie-gradient')" />
