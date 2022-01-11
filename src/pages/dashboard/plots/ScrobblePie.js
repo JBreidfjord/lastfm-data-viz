@@ -117,25 +117,25 @@ export default function ScrobblePie({ data, width, height }) {
   useEffect(() => {
     if (artists && albums && tracks) {
       setActiveArtists(
-        selectedArtist ? artists.filter(({ name }) => name === selectedArtist) : artists.slice(-n)
+        selectedArtist ? artists.filter(({ name }) => name === selectedArtist) : artists
       );
       setActiveAlbums(
         selectedAlbum
-          ? albums
-              .filter(({ title, artist }) => title === selectedAlbum && artist === selectedArtist)
-              .slice(-n)
+          ? albums.filter(
+              ({ title, artist }) => title === selectedAlbum && artist === selectedArtist
+            )
           : selectedArtist
-          ? albums.filter(({ artist }) => artist === selectedArtist).slice(-n)
-          : albums.slice(-n)
+          ? albums.filter(({ artist }) => artist === selectedArtist)
+          : albums
       );
       setActiveTracks(
         selectedAlbum
-          ? tracks
-              .filter(({ album, artist }) => album === selectedAlbum && artist === selectedArtist)
-              .slice(-n)
+          ? tracks.filter(
+              ({ album, artist }) => album === selectedAlbum && artist === selectedArtist
+            )
           : selectedArtist
-          ? tracks.filter(({ artist }) => artist === selectedArtist).slice(-n)
-          : tracks.slice(-n)
+          ? tracks.filter(({ artist }) => artist === selectedArtist)
+          : tracks
       );
     }
   }, [selectedArtist, selectedAlbum, artists, albums, tracks]);
@@ -144,43 +144,110 @@ export default function ScrobblePie({ data, width, height }) {
     if (activeArtists && activeAlbums && activeTracks) {
       setGetArtistColor(() =>
         scaleOrdinal({
-          domain: activeArtists.map(({ name }) => name),
-          range: [...Array(activeArtists.length).keys()].map(
-            (i) => `rgba(225, 225, 225, ${(i + 1) / activeArtists.length / 1.5})`
-          ),
+          domain: activeArtists.slice(-n).map(({ name }) => name),
+          range: [...Array(n).keys()].map((i) => `rgba(225, 225, 225, ${(i + 1) / n / 1.5})`),
         })
       );
       setGetAlbumColor(() =>
         scaleOrdinal({
-          domain: activeAlbums.map(({ title }) => title),
-          range: [...Array(activeAlbums.length).keys()].map(
-            (i) => `rgba(50, 50, 50, ${(i + 1) / activeAlbums.length / 1.5})`
-          ),
+          domain: activeAlbums.slice(-n).map(({ title }) => title),
+          range: [...Array(n).keys()].map((i) => `rgba(50, 50, 50, ${(i + 1) / n / 1.5})`),
         })
       );
       setGetTrackColor(() =>
         scaleOrdinal({
-          domain: activeTracks.map(({ title }) => title),
-          range: [...Array(activeTracks.length).keys()].map(
-            (i) => `rgba(0, 0, 0, ${(i + 1) / activeTracks.length / 1.5})`
-          ),
+          domain: activeTracks.slice(-n).map(({ title }) => title),
+          range: [...Array(n).keys()].map((i) => `rgba(0, 0, 0, ${(i + 1) / n / 1.5})`),
         })
       );
     }
   }, [activeArtists, activeAlbums, activeTracks]);
 
-  const handleMouseOver = (e, key, percent) => {
+  const handleMouseOver = (e, data, type) => {
+    console.log(data);
     const coords = localPoint(e.target.ownerSVGElement, e);
+    let tooltipData;
+    switch (type) {
+      case "artist":
+        tooltipData = (
+          <>
+            {data.name}
+            <br />
+            {data.scrobbles} scrobbles
+            <br />
+            {data.percent.toPrecision(3)}% of all scrobbles
+          </>
+        );
+        break;
+      case "album":
+        tooltipData = (
+          <>
+            {data.title}
+            <br />
+            {data.artist}
+            <br />
+            {data.scrobbles} scrobbles
+            <br />
+            {data.percent.toPrecision(3)}% of all scrobbles
+            {selectedArtist && !selectedAlbum && (
+              <>
+                <br />
+                {(
+                  (data.scrobbles /
+                    activeAlbums.reduce((acc, { scrobbles }) => (acc += scrobbles), 0)) *
+                  100
+                ).toPrecision(3)}
+                % of {selectedArtist} scrobbles
+              </>
+            )}
+          </>
+        );
+        break;
+      case "track":
+        tooltipData = (
+          <>
+            {data.title}
+            <br />
+            {data.album}
+            <br />
+            {data.artist}
+            <br />
+            {data.scrobbles} scrobbles
+            <br />
+            {data.percent.toPrecision(3)}% of all scrobbles
+            {selectedAlbum ? (
+              <>
+                <br />
+                {(
+                  (data.scrobbles /
+                    activeTracks.reduce((acc, { scrobbles }) => (acc += scrobbles), 0)) *
+                  100
+                ).toPrecision(3)}
+                % of {selectedAlbum} scrobbles
+              </>
+            ) : (
+              selectedArtist && (
+                <>
+                  <br />
+                  {(
+                    (data.scrobbles /
+                      activeTracks.reduce((acc, { scrobbles }) => (acc += scrobbles), 0)) *
+                    100
+                  ).toPrecision(3)}
+                  % of {selectedArtist} scrobbles
+                </>
+              )
+            )}
+          </>
+        );
+        break;
+      default:
+        tooltipData = <>Error</>;
+    }
     showTooltip({
       tooltipLeft: coords.x,
       tooltipTop: coords.y,
-      tooltipData: (
-        <>
-          {key}
-          <br />
-          {percent}%
-        </>
-      ),
+      tooltipData,
     });
   };
 
@@ -209,7 +276,7 @@ export default function ScrobblePie({ data, width, height }) {
         <Group top={centerY + margin.top} left={centerX + margin.left}>
           {/* Artists - Outer Donut */}
           <Pie
-            data={activeArtists}
+            data={activeArtists.slice(-n)}
             pieValue={(artist) => artist.percent}
             outerRadius={radius}
             innerRadius={radius - outerDonutThickness}
@@ -223,8 +290,8 @@ export default function ScrobblePie({ data, width, height }) {
                 getKey={(arc) => arc.data.name}
                 onClickDatum={({ data: { name } }) => handleClick(name)}
                 getColor={(arc) => getArtistColor(arc.data.name)}
-                onMouseOverDatum={(e, { data: { name, percent } }) => {
-                  handleMouseOver(e, name, percent.toPrecision(3));
+                onMouseOverDatum={(e, { data }) => {
+                  handleMouseOver(e, data, "artist");
                 }}
                 onMouseLeave={hideTooltip}
               />
@@ -233,7 +300,7 @@ export default function ScrobblePie({ data, width, height }) {
 
           {/* Albums - Inner Donut */}
           <Pie
-            data={activeAlbums}
+            data={activeAlbums.slice(-n)}
             pieValue={(album) => album.percent}
             outerRadius={radius - outerDonutThickness - gapSize}
             innerRadius={radius - outerDonutThickness - gapSize - innerDonutThickness}
@@ -247,12 +314,8 @@ export default function ScrobblePie({ data, width, height }) {
                 getKey={(arc) => arc.data.title}
                 getColor={(arc) => getAlbumColor(arc.data.title)}
                 onClickDatum={({ data: { artist, title } }) => handleClick(artist, title)}
-                onMouseOverDatum={(e, { data: { title, artist, percent } }) => {
-                  handleMouseOver(
-                    e,
-                    selectedArtist ? title : `${title} - ${artist}`,
-                    percent.toPrecision(3)
-                  );
+                onMouseOverDatum={(e, { data }) => {
+                  handleMouseOver(e, data, "album");
                 }}
                 onMouseLeave={hideTooltip}
               />
@@ -261,7 +324,7 @@ export default function ScrobblePie({ data, width, height }) {
 
           {/* Tracks - Inner Circle */}
           <Pie
-            data={activeTracks}
+            data={activeTracks.slice(-n)}
             pieValue={(album) => album.percent}
             outerRadius={radius - outerDonutThickness - innerDonutThickness - gapSize * 2}
           >
@@ -272,12 +335,8 @@ export default function ScrobblePie({ data, width, height }) {
                 getKey={({ data: { title } }) => title}
                 getColor={({ data: { title } }) => getTrackColor(title)}
                 onClickDatum={({ data: { artist, album } }) => handleClick(artist, album)}
-                onMouseOverDatum={(e, { data: { title, artist, percent } }) => {
-                  handleMouseOver(
-                    e,
-                    selectedArtist ? title : `${title} - ${artist}`,
-                    percent.toPrecision(3)
-                  );
+                onMouseOverDatum={(e, { data }) => {
+                  handleMouseOver(e, data, "track");
                 }}
                 onMouseLeave={hideTooltip}
               />
