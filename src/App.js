@@ -18,7 +18,7 @@ function App() {
       {authIsReady && (
         <BrowserRouter>
           <div className="container">
-            <Navbar />
+            <Navbar dataUser={scrobbleData.user} />
             <Routes>
               <Route
                 path="/"

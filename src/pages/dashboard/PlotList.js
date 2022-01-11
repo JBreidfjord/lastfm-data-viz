@@ -1,16 +1,18 @@
 import "./PlotList.css";
 
-import Mainstream from "./plots/Mainstream";
+import { ParentSize } from "@visx/responsive";
+import ScrobblePie from "./plots/ScrobblePie";
 
 export default function PlotList({ data }) {
-  const plots = [<Mainstream data={data} />];
-
+  const plots = [
+    <ParentSize>
+      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
+    </ParentSize>,
+  ];
   return (
     <div className="plot-list">
       {plots.map((plot, i) => (
-        <div key={i} className="plot">
-          {plot}
-        </div>
+        <div key={i}>{plot}</div>
       ))}
     </div>
   );

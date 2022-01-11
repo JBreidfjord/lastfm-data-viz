@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { useLogout } from "../hooks/useLogout";
 
-export default function Navbar() {
+export default function Navbar({ dataUser }) {
   const { user } = useAuthContext();
   const { logout } = useLogout();
 
@@ -16,11 +16,13 @@ export default function Navbar() {
             <span>Data Viz</span>
           </NavLink>
         </li>
-        <li>
-          <NavLink to="/dashboard">
-            <span>Dashboard</span>
-          </NavLink>
-        </li>
+        {dataUser && (
+          <li>
+            <NavLink to="/dashboard">
+              <span>Dashboard</span>
+            </NavLink>
+          </li>
+        )}
         {user ? (
           <li>
             <button className="btn" onClick={logout}>
