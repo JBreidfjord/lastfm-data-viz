@@ -5,6 +5,7 @@ import { useEffect, useReducer, useState } from "react";
 
 import { getFirestore } from "firebase/firestore";
 import { useFetch } from "../../hooks/useFetch";
+import { useFirestore } from "../../hooks/useFirestore";
 import { useNavigate } from "react-router-dom";
 import { useStorage } from "../../hooks/useStorage";
 
@@ -49,6 +50,7 @@ export default function Home({ setScrobbleData, scrobbleData }) {
     error: storageError,
     isPending: isStoragePending,
   } = useStorage();
+  const { updateDocument } = useFirestore("scrobbles");
   const [infoState, dispatch] = useReducer(infoReducer, initialInfoState);
   const { data, error: fetchError } = useFetch(infoState.url);
   const [tracks, setTracks] = useState([]);
@@ -140,22 +142,33 @@ export default function Home({ setScrobbleData, scrobbleData }) {
       infoState.previousChecked &&
       !isStoragePending
     ) {
-      upload(tracks, {
-        id: infoState.user.toLowerCase(),
-        data: { lastUpdated: time, lastUsed: Timestamp.now() },
-      });
+      if (storageData.length !== tracks.length) {
+        // Only upload to storage if data has changed
+        upload(tracks, {
+          id: infoState.user.toLowerCase(),
+          data: { lastUpdated: time, lastUsed: Timestamp.now() },
+        });
+      } else {
+        // Otherwise, only update the user's document
+        updateDocument(infoState.user.toLowerCase(), {
+          lastUpdated: time,
+          lastUsed: Timestamp.now(),
+        });
+      }
       setScrobbleData({ scrobbles: tracks, user: infoState.user });
     }
   }, [
     infoState.user,
     infoState.doneFetching,
     infoState.previousChecked,
+    storageData,
     isStoragePending,
     tracks,
     time,
     scrobbleData.user,
     setScrobbleData,
     upload,
+    updateDocument,
   ]);
 
   useEffect(() => {

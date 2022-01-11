@@ -1,7 +1,13 @@
-import { addDoc, collection, deleteDoc, doc, setDoc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getFirestore,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { useEffect, useReducer, useState } from "react";
-
-import { db } from "../firebase/config";
 
 const firestoreReducer = (state, action) => {
   switch (action.type) {
@@ -24,7 +30,7 @@ export const useFirestore = (collectionName) => {
   });
   const [isCancelled, setIsCancelled] = useState(false);
 
-  const collectionRef = collection(db, collectionName);
+  const collectionRef = collection(getFirestore(), collectionName);
 
   const dispatchIfNotCancelled = (action) => {
     if (!isCancelled) {
@@ -45,7 +51,7 @@ export const useFirestore = (collectionName) => {
   const deleteDocument = async (id) => {
     dispatchIfNotCancelled({ type: "PENDING" });
     try {
-      await deleteDoc(doc(db, collectionName, id));
+      await deleteDoc(doc(getFirestore(), collectionName, id));
       dispatchIfNotCancelled({ type: "SUCCESS" });
     } catch (err) {
       dispatchIfNotCancelled({ type: "ERROR", payload: err.message });
@@ -55,7 +61,7 @@ export const useFirestore = (collectionName) => {
   const updateDocument = async (id, updates) => {
     dispatchIfNotCancelled({ type: "PENDING" });
     try {
-      await updateDoc(doc(db, collectionName, id), updates);
+      await updateDoc(doc(getFirestore(), collectionName, id), updates);
       dispatchIfNotCancelled({ type: "SUCCESS" });
     } catch (err) {
       dispatchIfNotCancelled({ type: "ERROR", payload: err.message });
