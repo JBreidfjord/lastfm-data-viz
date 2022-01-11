@@ -16,6 +16,7 @@ export default function ScrobblePie({ data, width, height }) {
   const [activeAlbums, setActiveAlbums] = useState(null);
   const [activeTracks, setActiveTracks] = useState(null);
   const [selectedArtist, setSelectedArtist] = useState(null);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
   const [getArtistColor, setGetArtistColor] = useState(null);
   const [getAlbumColor, setGetAlbumColor] = useState(null);
   const [getTrackColor, setGetTrackColor] = useState(null);
@@ -105,9 +106,11 @@ export default function ScrobblePie({ data, width, height }) {
     setTracks(tracks);
   }, [data]);
 
-  const handleClick = (artist) => {
+  const handleClick = (artist, album = null) => {
     if (animate) {
-      setSelectedArtist(selectedArtist && selectedArtist === artist ? null : artist);
+      // selectedAlbum will be set to null if album is null so no additional check is required here
+      setSelectedAlbum(album === selectedAlbum ? null : album);
+      setSelectedArtist(!album && artist === selectedArtist ? null : artist);
     }
   };
 
@@ -117,17 +120,25 @@ export default function ScrobblePie({ data, width, height }) {
         selectedArtist ? artists.filter(({ name }) => name === selectedArtist) : artists.slice(-n)
       );
       setActiveAlbums(
-        selectedArtist
+        selectedAlbum
+          ? albums
+              .filter(({ title, artist }) => title === selectedAlbum && artist === selectedArtist)
+              .slice(-n)
+          : selectedArtist
           ? albums.filter(({ artist }) => artist === selectedArtist).slice(-n)
           : albums.slice(-n)
       );
       setActiveTracks(
-        selectedArtist
+        selectedAlbum
+          ? tracks
+              .filter(({ album, artist }) => album === selectedAlbum && artist === selectedArtist)
+              .slice(-n)
+          : selectedArtist
           ? tracks.filter(({ artist }) => artist === selectedArtist).slice(-n)
           : tracks.slice(-n)
       );
     }
-  }, [selectedArtist, artists, albums, tracks]);
+  }, [selectedArtist, selectedAlbum, artists, albums, tracks]);
 
   useEffect(() => {
     if (activeArtists && activeAlbums && activeTracks) {
@@ -198,11 +209,7 @@ export default function ScrobblePie({ data, width, height }) {
         <Group top={centerY + margin.top} left={centerX + margin.left}>
           {/* Artists - Outer Donut */}
           <Pie
-            data={
-              selectedArtist
-                ? artists.filter(({ name }) => name === selectedArtist).slice(-n)
-                : artists.slice(-n)
-            }
+            data={activeArtists}
             pieValue={(artist) => artist.percent}
             outerRadius={radius}
             innerRadius={radius - outerDonutThickness}
@@ -226,11 +233,7 @@ export default function ScrobblePie({ data, width, height }) {
 
           {/* Albums - Inner Donut */}
           <Pie
-            data={
-              selectedArtist
-                ? albums.filter(({ artist }) => artist === selectedArtist).slice(-n)
-                : albums.slice(-n)
-            }
+            data={activeAlbums}
             pieValue={(album) => album.percent}
             outerRadius={radius - outerDonutThickness - gapSize}
             innerRadius={radius - outerDonutThickness - gapSize - innerDonutThickness}
@@ -243,7 +246,7 @@ export default function ScrobblePie({ data, width, height }) {
                 animate={animate}
                 getKey={(arc) => arc.data.title}
                 getColor={(arc) => getAlbumColor(arc.data.title)}
-                onClickDatum={({ data: { artist } }) => handleClick(artist)}
+                onClickDatum={({ data: { artist, title } }) => handleClick(artist, title)}
                 onMouseOverDatum={(e, { data: { title, artist, percent } }) => {
                   handleMouseOver(
                     e,
@@ -258,11 +261,7 @@ export default function ScrobblePie({ data, width, height }) {
 
           {/* Tracks - Inner Circle */}
           <Pie
-            data={
-              selectedArtist
-                ? tracks.filter(({ artist }) => artist === selectedArtist).slice(-n)
-                : tracks.slice(-n)
-            }
+            data={activeTracks}
             pieValue={(album) => album.percent}
             outerRadius={radius - outerDonutThickness - innerDonutThickness - gapSize * 2}
           >
@@ -272,7 +271,7 @@ export default function ScrobblePie({ data, width, height }) {
                 animate={animate}
                 getKey={({ data: { title } }) => title}
                 getColor={({ data: { title } }) => getTrackColor(title)}
-                onClickDatum={({ data: { artist } }) => handleClick(artist)}
+                onClickDatum={({ data: { artist, album } }) => handleClick(artist, album)}
                 onMouseOverDatum={(e, { data: { title, artist, percent } }) => {
                   handleMouseOver(
                     e,
