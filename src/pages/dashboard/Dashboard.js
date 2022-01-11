@@ -9,11 +9,13 @@ export default function Dashboard({ scrobbleData }) {
 
   return (
     <div className="dashboard">
-      <h2>Dashboard</h2>
       {focus ? (
         <Plot setFocus={setFocus}>{focus}</Plot>
       ) : (
-        <PlotList data={scrobbleData} setFocus={setFocus} />
+        <>
+          <h2>Dashboard</h2>
+          <PlotList data={scrobbleData} setFocus={setFocus} />
+        </>
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import Close from "../../assets/close_fullscreen.svg";
 
 export default function Plot({ children, setFocus }) {
   return (
-    <div className="plot">
+    <div className="plot fullscreen">
       {children}
       <img
         src={Close}

@@ -9,9 +9,6 @@ export default function PlotList({ data, setFocus }) {
     <ParentSize>
       {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
     </ParentSize>,
-    <ParentSize>
-      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
-    </ParentSize>,
   ];
 
   return (
