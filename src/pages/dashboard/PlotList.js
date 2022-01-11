@@ -4,7 +4,7 @@ import Open from "../../assets/open_fullscreen.svg";
 import { ParentSize } from "@visx/responsive";
 import ScrobblePie from "./plots/ScrobblePie";
 
-export default function PlotList({ data, setFocus }) {
+export default function PlotList({ data, handleFocus }) {
   const plots = [
     <ParentSize>
       {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
@@ -19,7 +19,7 @@ export default function PlotList({ data, setFocus }) {
             {plot}
             <img
               src={Open}
-              onClick={() => setFocus(plot)}
+              onClick={() => handleFocus(plot)}
               className="fullscreen-icon open"
               alt="Open Fullscreen"
             />
