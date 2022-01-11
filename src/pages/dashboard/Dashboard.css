@@ -12,8 +12,3 @@
 .plot {
   position: relative;
 }
-
-.plot.fullscreen {
-  height: 90vh;
-  margin-top: 5vh;
-}

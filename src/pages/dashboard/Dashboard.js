@@ -15,7 +15,9 @@ export default function Dashboard({ scrobbleData, setShowNav }) {
   return (
     <div className="dashboard">
       {focus ? (
-        <Plot handleFocus={handleFocus}>{focus}</Plot>
+        <Plot handleFocus={handleFocus} user={scrobbleData.user}>
+          {focus}
+        </Plot>
       ) : (
         <>
           <h2>Dashboard</h2>
