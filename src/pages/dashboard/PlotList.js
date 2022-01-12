@@ -6,21 +6,29 @@ import ScrobblePie from "./plots/ScrobblePie";
 import { useState } from "react";
 
 export default function PlotList({ data, handleFocus }) {
-  const [showInfo, setShowInfo] = useState(false);
-
   const plots = [
+    <ParentSize>
+      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
+    </ParentSize>,
     <ParentSize>
       {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
     </ParentSize>,
   ];
 
+  const [showInfo, setShowInfo] = useState(plots.map(() => false));
+
   let timeout;
-  const handleMove = () => {
+  const handleMove = (i) => {
     clearTimeout(timeout);
-    if (!showInfo) {
-      setShowInfo(true);
-      timeout = setTimeout(() => setShowInfo(false), 3000);
+    if (!showInfo[i]) {
+      setShowInfo((prevShowInfo) => prevShowInfo.map((prev, j) => (j === i ? true : prev)));
+      timeout = setTimeout(() => handleLeave(i), 3000);
     }
+  };
+
+  const handleLeave = (i) => {
+    clearTimeout(timeout);
+    setShowInfo((prevShowInfo) => prevShowInfo.map((prev, j) => (j === i ? false : prev)));
   };
 
   return (
@@ -30,14 +38,14 @@ export default function PlotList({ data, handleFocus }) {
           <div
             className="plot"
             key={i}
-            onMouseMove={handleMove}
-            onMouseLeave={() => setShowInfo(false)}
+            onMouseMove={() => handleMove(i)}
+            onMouseLeave={() => handleLeave(i)}
           >
             {plot}
             <img
               src={Open}
               onClick={() => handleFocus(plot)}
-              className={"fullscreen-icon open" + (showInfo ? " visible" : " hidden")}
+              className={"fullscreen-icon open" + (showInfo[i] ? " visible" : " hidden")}
               alt="Open Fullscreen"
             />
           </div>
