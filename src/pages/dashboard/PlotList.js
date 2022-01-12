@@ -25,10 +25,12 @@ export default function PlotList({ data, handleFocus }) {
     setShowInfo((prevShowInfo) => prevShowInfo.map((prev, j) => (j === i ? false : prev)));
   };
 
-  const getElem = (Elem) => {
+  const getElem = (Elem, isPreview) => {
     return (
       <ParentSize>
-        {({ width, height }) => <Elem data={data} width={width} height={height} />}
+        {({ width, height }) => (
+          <Elem data={data} width={width} height={height} isPreview={isPreview} />
+        )}
       </ParentSize>
     );
   };
@@ -36,22 +38,20 @@ export default function PlotList({ data, handleFocus }) {
   return (
     <div className="plot-list">
       {Plots.map((Plot, i) => (
-        <>
-          <div
-            className="plot"
-            key={i}
-            onMouseMove={() => handleMove(i)}
-            onMouseLeave={() => handleLeave(i)}
-          >
-            {getElem(Plot)}
-            <img
-              src={Open}
-              onClick={() => handleFocus(getElem(Plot))}
-              className={"fullscreen-icon open" + (showInfo[i] ? " visible" : " hidden")}
-              alt="Open Fullscreen"
-            />
-          </div>
-        </>
+        <div
+          className="plot"
+          key={i}
+          onMouseMove={() => handleMove(i)}
+          onMouseLeave={() => handleLeave(i)}
+        >
+          {getElem(Plot, true)}
+          <img
+            src={Open}
+            onClick={() => handleFocus(getElem(Plot, false))}
+            className={"fullscreen-icon open" + (showInfo[i] ? " visible" : " hidden")}
+            alt="Open Fullscreen"
+          />
+        </div>
       ))}
     </div>
   );

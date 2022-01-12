@@ -20,15 +20,19 @@ const getMinMax = (vals) => {
 
 const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
-export default function HistoryGrid({ data, width, height }) {
+export default function HistoryGrid({ data, width, height, isPreview }) {
   const [chartData, setChartData] = useState(null);
   const [xScale, setXScale] = useState(null);
   const [chartCircles, setChartCircles] = useState(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const filterProb = 3000 / data.scrobbles.length; // Target array length / current array length
+    const scrobbles = isPreview
+      ? data.scrobbles.filter(() => Math.random() < filterProb)
+      : data.scrobbles;
     setChartData(() =>
-      data.scrobbles.map((scrobble) => {
+      scrobbles.map((scrobble) => {
         const date = new Date(parseInt(scrobble.date) * 1000);
         const time = date.getSeconds() + date.getMinutes() * 60 + date.getHours() * 3600;
         return {
@@ -40,7 +44,7 @@ export default function HistoryGrid({ data, width, height }) {
         };
       })
     );
-  }, [data.scrobbles]);
+  }, [data.scrobbles, isPreview]);
 
   // Scales
   useEffect(() => {
