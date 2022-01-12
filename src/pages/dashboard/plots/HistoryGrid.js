@@ -38,6 +38,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
       scrobbles.map((scrobble) => {
         const date = new Date(parseInt(scrobble.date) * 1000);
         const time = date.getSeconds() + date.getMinutes() * 60 + date.getHours() * 3600;
+        date.setHours(0, 0, 0, 0); // Set time to 00:00:00 so columns are aligned
         return {
           x: date,
           y: time,
