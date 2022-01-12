@@ -1,21 +1,15 @@
 import "./PlotList.css";
 
+import HistoryGrid from "./plots/HistoryGrid";
 import Open from "../../assets/open_fullscreen.svg";
 import { ParentSize } from "@visx/responsive";
 import ScrobblePie from "./plots/ScrobblePie";
 import { useState } from "react";
 
 export default function PlotList({ data, handleFocus }) {
-  const plots = [
-    <ParentSize>
-      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
-    </ParentSize>,
-    <ParentSize>
-      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
-    </ParentSize>,
-  ];
+  const Plots = [ScrobblePie, HistoryGrid];
 
-  const [showInfo, setShowInfo] = useState(plots.map(() => false));
+  const [showInfo, setShowInfo] = useState(Plots.map(() => false));
 
   let timeout;
   const handleMove = (i) => {
@@ -31,9 +25,17 @@ export default function PlotList({ data, handleFocus }) {
     setShowInfo((prevShowInfo) => prevShowInfo.map((prev, j) => (j === i ? false : prev)));
   };
 
+  const getElem = (Elem) => {
+    return (
+      <ParentSize>
+        {({ width, height }) => <Elem data={data} width={width} height={height} />}
+      </ParentSize>
+    );
+  };
+
   return (
     <div className="plot-list">
-      {plots.map((plot, i) => (
+      {Plots.map((Plot, i) => (
         <>
           <div
             className="plot"
@@ -41,10 +43,10 @@ export default function PlotList({ data, handleFocus }) {
             onMouseMove={() => handleMove(i)}
             onMouseLeave={() => handleLeave(i)}
           >
-            {plot}
+            {getElem(Plot)}
             <img
               src={Open}
-              onClick={() => handleFocus(plot)}
+              onClick={() => handleFocus(getElem(Plot))}
               className={"fullscreen-icon open" + (showInfo[i] ? " visible" : " hidden")}
               alt="Open Fullscreen"
             />
