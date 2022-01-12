@@ -1,0 +1,16 @@
+.plot.fullscreen {
+  height: 90vh;
+}
+
+.fullscreen-title-bar {
+  height: 5vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fullscreen-title-bar .banner {
+  font-weight: bold;
+  color: var(--heading-color);
+  letter-spacing: 1px;
+}

@@ -1,12 +1,29 @@
 import "./Dashboard.css";
 
+import Plot from "./Plot";
 import PlotList from "./PlotList";
+import { useState } from "react";
 
-export default function Dashboard({ scrobbleData }) {
+export default function Dashboard({ scrobbleData, setShowNav }) {
+  const [focus, setFocus] = useState(null);
+
+  const handleFocus = (focus = null) => {
+    setFocus(focus);
+    setShowNav(focus === null);
+  };
+
   return (
     <div className="dashboard">
-      <h2>Dashboard</h2>
-      <PlotList data={scrobbleData} />
+      {focus ? (
+        <Plot handleFocus={handleFocus} user={scrobbleData.user}>
+          {focus}
+        </Plot>
+      ) : (
+        <>
+          <h2>Dashboard</h2>
+          <PlotList data={scrobbleData} handleFocus={handleFocus} />
+        </>
+      )}
     </div>
   );
 }

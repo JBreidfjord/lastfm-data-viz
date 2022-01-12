@@ -12,13 +12,14 @@ import { useState } from "react";
 function App() {
   const { authIsReady, user } = useAuthContext();
   const [scrobbleData, setScrobbleData] = useState({ scrobbles: [], user: null });
+  const [showNav, setShowNav] = useState(true);
 
   return (
     <div className="App">
       {authIsReady && (
         <BrowserRouter>
           <div className="container">
-            <Navbar dataUser={scrobbleData.user} />
+            {showNav && <Navbar dataUser={scrobbleData.user} />}
             <Routes>
               <Route
                 path="/"
@@ -28,7 +29,7 @@ function App() {
                 path="/dashboard"
                 element={
                   scrobbleData.user ? (
-                    <Dashboard scrobbleData={scrobbleData} />
+                    <Dashboard scrobbleData={scrobbleData} setShowNav={setShowNav} />
                   ) : (
                     <Navigate to="/" />
                   )

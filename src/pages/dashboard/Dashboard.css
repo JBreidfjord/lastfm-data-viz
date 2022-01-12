@@ -1,0 +1,14 @@
+.dashboard .fullscreen-icon {
+  position: absolute;
+  cursor: pointer;
+  filter: invert(100%);
+  bottom: 0;
+  right: 0;
+  margin: 8px 8px;
+  height: 24px;
+  width: 24px;
+}
+
+.plot {
+  position: relative;
+}
