@@ -1,7 +1,7 @@
 // import { Tooltip, withTooltip } from "@visx/tooltip";
 // import { VoronoiPolygon, voronoi } from "@visx/voronoi";
 import { coerceNumber, scaleLinear, scaleTime } from "@visx/scale";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Circle } from "@visx/shape";
 import { Group } from "@visx/group";
@@ -18,12 +18,16 @@ const getMinMax = (vals) => {
   return [Math.min(...numericVals), Math.max(...numericVals)];
 };
 
+const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+
 export default function HistoryGrid({ data, width, height }) {
   const [chartData, setChartData] = useState(null);
   const [xScale, setXScale] = useState(null);
+  const [chartCircles, setChartCircles] = useState(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setChartData(
+    setChartData(() =>
       data.scrobbles.map((scrobble) => {
         const date = new Date(parseInt(scrobble.date) * 1000);
         const time = date.getSeconds() + date.getMinutes() * 60 + date.getHours() * 3600;
@@ -38,41 +42,60 @@ export default function HistoryGrid({ data, width, height }) {
     );
   }, [data.scrobbles]);
 
+  // Scales
   useEffect(() => {
-    if (chartData) {
+    if (chartData && width > 0) {
       const vals = chartData.map((d) => d.x);
       setXScale(() =>
         scaleTime({
           domain: getMinMax(vals),
-          range: [0, width],
+          range: [margin.left, width - margin.right],
         })
       );
     }
   }, [chartData, width]);
 
-  const yScale = scaleLinear({
-    domain: [86400, 0],
-    range: [height, 0],
-  });
+  const yScale = useMemo(
+    () =>
+      scaleLinear({
+        domain: [86400, 0],
+        range: [height - margin.top, margin.bottom],
+      }),
+    [height]
+  );
 
-  return chartData && xScale ? (
+  // Set circles for chart
+  useEffect(() => {
+    if (chartData && xScale) {
+      setChartCircles(() =>
+        chartData.map((point, i) => (
+          <Circle
+            key={`point-${point.x}-${i}`}
+            className="dot"
+            cx={xScale(point.x)}
+            cy={yScale(point.y)}
+            r={1.5}
+            fill={background}
+          />
+        ))
+      );
+    }
+  }, [chartData, xScale, yScale, ready]);
+
+  useEffect(() => {
+    setReady(chartCircles !== null);
+  }, [chartCircles]);
+
+  return ready ? (
     <>
       <svg width={width} height={height}>
-        <LinearGradient id="visx-axis-gradient" from={cool1} to={cool2} toOpacity={0.7} />
+        <LinearGradient id="visx-axis-gradient" from={cool2} to={cool1} toOpacity={0.7} />
         <rect width={width} height={height} rx={14} fill={"url(#visx-axis-gradient)"} />
-        <Group pointerEvents="none">
-          {chartData.map((point, i) => (
-            <Circle
-              key={`point-${point.x}-${i}`}
-              className="dot"
-              cx={xScale(point.x)}
-              cy={yScale(point.y)}
-              r={2}
-              fill={background}
-            />
-          ))}
-        </Group>
+        <Group pointerEvents="none">{chartCircles.map((Circle) => Circle)}</Group>
       </svg>
     </>
-  ) : null;
+  ) : (
+    <>Loading...</>
+    // <Spinner />
+  );
 }
