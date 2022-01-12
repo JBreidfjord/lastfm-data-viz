@@ -27,10 +27,13 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const filterProb = 3000 / data.scrobbles.length; // Target array length / current array length
-    const scrobbles = isPreview
-      ? data.scrobbles.filter(() => Math.random() < filterProb)
-      : data.scrobbles;
+    const targetLength = isPreview ? 3000 : 100000; // Limit to 100k for performance
+    const filterProb = targetLength / data.scrobbles.length;
+    const scrobbles =
+      data.scrobbles.length > targetLength
+        ? data.scrobbles.filter(() => Math.random() < filterProb)
+        : data.scrobbles;
+
     setChartData(() =>
       scrobbles.map((scrobble) => {
         const date = new Date(parseInt(scrobble.date) * 1000);
