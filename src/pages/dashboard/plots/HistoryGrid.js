@@ -1,15 +1,14 @@
 import { Axis, Orientation } from "@visx/axis";
-// import { Tooltip, withTooltip } from "@visx/tooltip";
-// import { VoronoiPolygon, voronoi } from "@visx/voronoi";
+import { TooltipWithBounds, defaultStyles, useTooltip } from "@visx/tooltip";
+import { VoronoiPolygon, voronoi } from "@visx/voronoi";
 import { coerceNumber, scaleLinear, scaleTime } from "@visx/scale";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Circle } from "@visx/shape";
 import { Group } from "@visx/group";
 import { LinearGradient } from "@visx/gradient";
+import { localPoint } from "@visx/event";
 import { timeFormat } from "d3-time-format";
-
-// import { localPoint } from "@visx/event";
 
 const formatDate = timeFormat("%b '%y");
 const formatTime = (seconds) => {
@@ -41,11 +40,16 @@ const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 const axisWidth = 50;
 const axisHeight = 40;
 
+let tooltipTimeout;
+
 export default function HistoryGrid({ data, width, height, isPreview }) {
   const [chartData, setChartData] = useState(null);
   const [xScale, setXScale] = useState(null);
   const [chartCircles, setChartCircles] = useState(null);
   const [ready, setReady] = useState(false);
+  const svgRef = useRef(null);
+  const { showTooltip, hideTooltip, tooltipLeft, tooltipTop, tooltipData, tooltipOpen } =
+    useTooltip();
 
   useEffect(() => {
     const targetLength = isPreview ? 3000 : 100000; // Limit to 100k for performance
@@ -93,6 +97,62 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
     [height]
   );
 
+  // Tooltip
+  const voronoiLayout = useMemo(() => {
+    return chartData && xScale
+      ? voronoi({
+          x: (d) => xScale(d.x) ?? 0,
+          y: (d) => yScale(d.y) ?? 0,
+          width,
+          height,
+        })(chartData)
+      : null;
+  }, [width, height, xScale, yScale, chartData]);
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (tooltipTimeout) clearTimeout(tooltipTimeout);
+      if (!svgRef.current) return;
+
+      // Find nearest polygon to current mouse position
+      const point = localPoint(svgRef.current, e);
+      if (!point) return;
+      const neighborRadius = 100;
+      const closest = voronoiLayout.find(point.x, point.y, neighborRadius);
+      if (closest) {
+        const tooltipData = (
+          <>
+            {closest.data.info.title}
+            <br />
+            {closest.data.info.album}
+            <br />
+            {closest.data.info.artist}
+            <br />
+            {timeFormat("%X - %b %d, %Y")(new Date(closest.data.info.date * 1000))}
+          </>
+        );
+        showTooltip({
+          tooltipLeft: xScale(closest.data.x),
+          tooltipTop: yScale(closest.data.y),
+          tooltipData,
+        });
+      }
+    },
+    [xScale, yScale, showTooltip, voronoiLayout]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    tooltipTimeout = window.setTimeout(() => {
+      hideTooltip();
+    }, 300);
+  }, [hideTooltip]);
+
+  const tooltipStyles = {
+    ...defaultStyles,
+    opacity: 0.9,
+    margin: "0 auto",
+  };
+
   // Set circles for chart
   useEffect(() => {
     if (chartData && xScale) {
@@ -109,7 +169,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
         ))
       );
     }
-  }, [chartData, xScale, yScale, ready]);
+  }, [chartData, xScale, yScale]);
 
   useEffect(() => {
     setReady(chartCircles !== null);
@@ -121,9 +181,18 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
 
   return ready ? (
     <>
-      <svg width={width} height={height}>
+      <svg width={width} height={height} ref={svgRef}>
         <LinearGradient id="visx-axis-gradient" from={cool2} to={cool1} toOpacity={0.7} />
-        <rect width={width} height={height} rx={14} fill={"url(#visx-axis-gradient)"} />
+        <rect
+          width={width}
+          height={height}
+          rx={14}
+          fill={"url(#visx-axis-gradient)"}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+          onTouchMove={handleMouseMove}
+          onTouchEnd={handleMouseLeave}
+        />
         <g>
           <Axis
             orientation={Orientation.bottom}
@@ -148,6 +217,16 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
         </g>
         <Group pointerEvents="none">{chartCircles.map((Circle) => Circle)}</Group>
       </svg>
+      {tooltipOpen && (
+        <TooltipWithBounds
+          key={Math.random()}
+          top={tooltipTop}
+          left={tooltipLeft}
+          style={tooltipStyles}
+        >
+          {tooltipData}
+        </TooltipWithBounds>
+      )}
     </>
   ) : (
     <>Loading...</>
