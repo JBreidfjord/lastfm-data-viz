@@ -4,6 +4,7 @@ import { Timestamp, doc, getDoc } from "firebase/firestore";
 import { useEffect, useReducer, useState } from "react";
 
 import { getFirestore } from "firebase/firestore";
+import { useAuthContext } from "../../hooks/useAuthContext";
 import { useFetch } from "../../hooks/useFetch";
 import { useFirestore } from "../../hooks/useFirestore";
 import { useNavigate } from "react-router-dom";
@@ -51,6 +52,7 @@ export default function Home({ setScrobbleData, scrobbleData }) {
     isPending: isStoragePending,
   } = useStorage();
   const { updateDocument } = useFirestore("scrobbles");
+  const { user } = useAuthContext();
   const [infoState, dispatch] = useReducer(infoReducer, initialInfoState);
   const { data, error: fetchError } = useFetch(infoState.url);
   const [tracks, setTracks] = useState([]);
@@ -142,19 +144,23 @@ export default function Home({ setScrobbleData, scrobbleData }) {
       infoState.previousChecked &&
       !isStoragePending
     ) {
-      if (storageData.length !== tracks.length) {
+      // Only upload/update if the user is logged in
+      if (user) {
         // Only upload to storage if data has changed
-        upload(tracks, {
-          id: infoState.user.toLowerCase(),
-          data: { lastUpdated: time, lastUsed: Timestamp.now() },
-        });
-      } else {
-        // Otherwise, only update the user's document
+        if (!storageData || storageData.length !== tracks.length) {
+          upload(tracks, {
+            id: infoState.user.toLowerCase(),
+            data: { lastUpdated: time, lastUsed: Timestamp.now() },
+          });
+        }
+
+        // Update the user's document
         updateDocument(infoState.user.toLowerCase(), {
           lastUpdated: time,
           lastUsed: Timestamp.now(),
         });
       }
+
       setScrobbleData({ scrobbles: tracks, user: infoState.user });
     }
   }, [
@@ -169,6 +175,7 @@ export default function Home({ setScrobbleData, scrobbleData }) {
     setScrobbleData,
     upload,
     updateDocument,
+    user,
   ]);
 
   useEffect(() => {
