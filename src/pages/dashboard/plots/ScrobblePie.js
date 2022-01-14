@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { GradientSteelPurple } from "@visx/gradient";
 import { Group } from "@visx/group";
 import { Pie } from "@visx/shape";
+import Spinner from "../../../components/Spinner";
 import { localPoint } from "@visx/event";
 import { scaleOrdinal } from "@visx/scale";
 
@@ -257,7 +258,7 @@ export default function ScrobblePie({ data, width, height }) {
   };
 
   const animate = true;
-  const margin = { left: 20, top: 20, right: 20, bottom: 20 };
+  const margin = { top: 20, right: 20, bottom: 20, left: 20 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
   const radius = Math.min(innerWidth, innerHeight) / 2;
@@ -268,7 +269,7 @@ export default function ScrobblePie({ data, width, height }) {
   const gapSize = 10;
 
   return activeArtists && activeAlbums && getArtistColor && getAlbumColor ? (
-    <div>
+    <>
       <svg width={width} height={height}>
         <GradientSteelPurple id="album-artist-pie-gradient" />
         <rect rx={14} width={width} height={height} fill="url('#album-artist-pie-gradient')" />
@@ -353,8 +354,10 @@ export default function ScrobblePie({ data, width, height }) {
           {tooltipData}
         </TooltipWithBounds>
       )}
-    </div>
-  ) : null;
+    </>
+  ) : (
+    <Spinner />
+  );
 }
 
 // react-spring transition definitions
