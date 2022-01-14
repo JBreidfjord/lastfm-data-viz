@@ -23,6 +23,7 @@
     "@visx/voronoi": "^2.1.2",
     "@visx/xychart": "^2.5.0",
     "@visx/zoom": "^2.2.2",
+    "d3-time-format": "^4.1.0",
     "firebase": "^9.6.1",
     "pako": "^2.0.4",
     "react": "^17.0.2",

@@ -1,3 +1,4 @@
+import { Axis, Orientation } from "@visx/axis";
 // import { Tooltip, withTooltip } from "@visx/tooltip";
 // import { VoronoiPolygon, voronoi } from "@visx/voronoi";
 import { coerceNumber, scaleLinear, scaleTime } from "@visx/scale";
@@ -6,12 +7,30 @@ import { useEffect, useMemo, useState } from "react";
 import { Circle } from "@visx/shape";
 import { Group } from "@visx/group";
 import { LinearGradient } from "@visx/gradient";
+import { timeFormat } from "d3-time-format";
 
 // import { localPoint } from "@visx/event";
+
+const formatDate = timeFormat("%b '%y");
+const formatTime = (seconds) => {
+  return seconds === 0 || seconds === 86400
+    ? "12am"
+    : seconds === 43200
+    ? "12pm"
+    : seconds < 43200
+    ? seconds / 3600 + "am"
+    : seconds / 3600 - 12 + "pm";
+};
 
 const cool1 = "#122549";
 const cool2 = "#b4fbde";
 const background = "#28272c";
+const tickLabelProps = (horizontal = true) => ({
+  fill: "white",
+  fontSize: 12,
+  textAnchor: horizontal ? "middle" : "left",
+  verticalAnchor: "middle",
+});
 
 const getMinMax = (vals) => {
   const numericVals = vals.map(coerceNumber);
@@ -19,6 +38,8 @@ const getMinMax = (vals) => {
 };
 
 const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+const axisWidth = 50;
+const axisHeight = 40;
 
 export default function HistoryGrid({ data, width, height, isPreview }) {
   const [chartData, setChartData] = useState(null);
@@ -57,7 +78,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
       setXScale(() =>
         scaleTime({
           domain: getMinMax(vals),
-          range: [margin.left, width - margin.right],
+          range: [margin.left, width - margin.right - axisWidth],
         })
       );
     }
@@ -66,8 +87,8 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
   const yScale = useMemo(
     () =>
       scaleLinear({
-        domain: [86400, 0],
-        range: [height - margin.top, margin.bottom],
+        domain: [0, 86400],
+        range: [margin.top, height - margin.bottom - axisHeight],
       }),
     [height]
   );
@@ -94,11 +115,37 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
     setReady(chartCircles !== null);
   }, [chartCircles]);
 
+  const timeValues = [...Array(25).keys()]
+    .map((v) => v * 3600)
+    .filter((_, i) => i % (height > 500 ? 2 : 4) === 0);
+
   return ready ? (
     <>
       <svg width={width} height={height}>
         <LinearGradient id="visx-axis-gradient" from={cool2} to={cool1} toOpacity={0.7} />
         <rect width={width} height={height} rx={14} fill={"url(#visx-axis-gradient)"} />
+        <g>
+          <Axis
+            orientation={Orientation.bottom}
+            top={height - axisHeight}
+            scale={xScale}
+            tickFormat={(d) => formatDate(d)}
+            tickLabelProps={tickLabelProps}
+            numTicks={width / 120}
+            tickLength={4}
+          />
+          <Axis
+            orientation={Orientation.right}
+            left={width - axisWidth}
+            scale={yScale}
+            tickValues={timeValues}
+            tickFormat={(s) => formatTime(s)}
+            tickLabelProps={() => tickLabelProps(false)}
+            numTicks={height > 500 ? 13 : 7}
+            hideTicks={true}
+            tickLength={4}
+          />
+        </g>
         <Group pointerEvents="none">{chartCircles.map((Circle) => Circle)}</Group>
       </svg>
     </>
