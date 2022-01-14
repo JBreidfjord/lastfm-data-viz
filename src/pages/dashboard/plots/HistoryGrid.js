@@ -21,9 +21,8 @@ const formatTime = (seconds) => {
     : seconds / 3600 - 12 + "pm";
 };
 
-const cool1 = "#122549";
-const cool2 = "#b4fbde";
-const background = "#28272c";
+const backgroundColor = "#122549";
+const pointColor = "#28272c";
 const tickLabelProps = (horizontal = true) => ({
   fill: "white",
   fontSize: 12,
@@ -42,11 +41,16 @@ const axisHeight = 40;
 
 let tooltipTimeout;
 
+const numColors = 10;
+
 export default function HistoryGrid({ data, width, height, isPreview }) {
   const [chartData, setChartData] = useState(null);
   const [xScale, setXScale] = useState(null);
   const [chartCircles, setChartCircles] = useState(null);
   const [ready, setReady] = useState(false);
+
+  // const [numColors, setNumColors] = useState(10);
+
   const [hovered, setHovered] = useState(null);
   const svgRef = useRef(null);
   const { showTooltip, hideTooltip, tooltipLeft, tooltipTop, tooltipData, tooltipOpen } =
@@ -55,22 +59,54 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
   useEffect(() => {
     const targetLength = isPreview ? 3000 : 100000; // Limit to 100k for performance
     const filterProb = targetLength / data.scrobbles.length;
-    const scrobbles =
+    const filteredScrobbles =
       data.scrobbles.length > targetLength
         ? data.scrobbles.filter(() => Math.random() < filterProb)
         : data.scrobbles;
 
+    // Set array of highlight colors
+    const colors = [...Array(numColors).keys()].map(
+      (i) => `hsl(${(i * 360) / numColors}, 100%, 50%)`
+    );
+
+    // Get total scrobbles for each artist
+    let artists = {};
+    filteredScrobbles.forEach((scrobble) => {
+      if (artists[scrobble.artist]) {
+        artists[scrobble.artist]["scrobbles"]++;
+      } else {
+        artists[scrobble.artist] = { scrobbles: 1 };
+      }
+    });
+
+    const sortKey = (a, b) => a[1]["scrobbles"] - b[1]["scrobbles"];
+
+    // Move artists to sorted array
+    artists = Object.entries(artists)
+      .sort(sortKey)
+      .slice(-numColors)
+      .reduce((acc, [artistName, { scrobbles }], i) => {
+        acc.push({
+          name: artistName,
+          scrobbles,
+          color: colors[i],
+        });
+        return acc;
+      }, []);
+
     setChartData(() =>
-      scrobbles.map((scrobble) => {
+      filteredScrobbles.map((scrobble) => {
         const date = new Date(parseInt(scrobble.date) * 1000);
         const time = date.getSeconds() + date.getMinutes() * 60 + date.getHours() * 3600;
         date.setHours(0, 0, 0, 0); // Set time to 00:00:00 so columns are aligned
+        const artistMatch = artists.find((artist) => artist.name === scrobble.artist);
         return {
           x: date,
           y: time,
           info: {
             ...scrobble,
           },
+          color: artistMatch ? artistMatch.color : pointColor,
         };
       })
     );
@@ -167,7 +203,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
             cx={xScale(point.x)}
             cy={yScale(point.y)}
             r={1.5}
-            fill={background}
+            fill={point.color}
           />
         ))
       );
@@ -185,7 +221,13 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
   return ready ? (
     <>
       <svg width={width} height={height} ref={svgRef}>
-        <LinearGradient id="visx-axis-gradient" from={cool2} to={cool1} toOpacity={0.7} />
+        <LinearGradient
+          id="visx-axis-gradient"
+          from={backgroundColor}
+          to={backgroundColor}
+          toOpacity={0.65}
+          fromOpacity={0.4}
+        />
         <rect
           width={width}
           height={height}
@@ -196,7 +238,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
           onTouchMove={handleMouseMove}
           onTouchEnd={handleMouseLeave}
         />
-        <g>
+        <Group pointerEvents="none">
           <Axis
             orientation={Orientation.bottom}
             top={height - axisHeight}
@@ -217,15 +259,13 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
             hideTicks={true}
             tickLength={4}
           />
-        </g>
-        <Group pointerEvents="none">
           {chartCircles.map((Circle) => Circle)}
           {hovered && (
             <Circle
               className="dot"
               cx={xScale(hovered.x)}
               cy={yScale(hovered.y)}
-              r={1.5}
+              r={2}
               fill="white"
             />
           )}
