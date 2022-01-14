@@ -24,7 +24,7 @@ export default function ScrobblePie({ data, width, height, isPreview }) {
   const { showTooltip, hideTooltip, tooltipLeft, tooltipTop, tooltipData, tooltipOpen } =
     useTooltip();
 
-  const n = 10;
+  const n = isPreview ? 5 : 15;
 
   useEffect(() => {
     let artists = {};
@@ -162,7 +162,7 @@ export default function ScrobblePie({ data, width, height, isPreview }) {
         })
       );
     }
-  }, [activeArtists, activeAlbums, activeTracks]);
+  }, [activeArtists, activeAlbums, activeTracks, n]);
 
   const handleMouseOver = (e, data, type) => {
     const coords = localPoint(e.target.ownerSVGElement, e);
@@ -408,43 +408,33 @@ const AnimatedPie = ({
   return transitions((props, arc, { key }) => {
     const center = (arc.startAngle + arc.endAngle) / 2;
 
-    const hasSpaceForName =
-      key.length * 5.75 <
-      (center < Math.PI / 2 || center > (3 * Math.PI) / 2
-        ? (arc.endAngle - arc.startAngle) * outerRadius
-        : innerRadius > 0
-        ? (arc.endAngle - arc.startAngle) * innerRadius
-        : outerRadius);
-
-    const dy =
-      innerRadius > 0 &&
+    const isBottom =
       center > Math.PI / 2 &&
-      center < (3 * Math.PI) / 2 &&
-      (arc.endAngle - arc.startAngle).toPrecision(5) !== (2 * Math.PI).toPrecision(5)
-        ? (outerRadius - innerRadius) * 0.9 + "px"
-        : "1em";
+      arc.startAngle < (3 * Math.PI) / 2 &&
+      (arc.endAngle - arc.startAngle).toPrecision(5) !== (2 * Math.PI).toPrecision(5);
+
+    const hasSpaceForName =
+      key.length * 6.75 <
+      (innerRadius > 0 ? (arc.endAngle - arc.startAngle) * outerRadius : outerRadius);
+
+    const dy = innerRadius > 0 && isBottom ? (outerRadius - innerRadius) * 0.9 + "px" : "1em";
+
+    const totalLength =
+      (arc.endAngle - arc.startAngle) * outerRadius +
+      (arc.endAngle - arc.startAngle) * innerRadius +
+      2 * (outerRadius - innerRadius);
 
     const offset =
       innerRadius > 0
-        ? center > Math.PI / 2 &&
-          center < (3 * Math.PI) / 2 &&
-          (arc.endAngle - arc.startAngle).toPrecision(5) !== (2 * Math.PI).toPrecision(5)
-          ? "88%"
-          : "2%"
+        ? isBottom
+          ? (totalLength - (outerRadius - innerRadius)) * 0.975
+          : (arc.endAngle - arc.startAngle) * outerRadius * 0.02
         : center > Math.PI
-        ? "24%"
-        : "98%";
+        ? (arc.endAngle - arc.startAngle) * outerRadius * 1.02
+        : totalLength * 0.99;
 
     const textAnchor =
-      innerRadius > 0
-        ? center < Math.PI / 2 ||
-          center > (3 * Math.PI) / 2 ||
-          (arc.endAngle - arc.startAngle).toPrecision(5) === (2 * Math.PI).toPrecision(5)
-          ? "start"
-          : "end"
-        : center > Math.PI
-        ? "start"
-        : "end";
+      innerRadius > 0 ? (isBottom ? "end" : "start") : center > Math.PI ? "start" : "end";
 
     return (
       <g key={key}>
