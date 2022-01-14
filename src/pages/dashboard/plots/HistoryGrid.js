@@ -1,6 +1,5 @@
 import { Axis, Orientation } from "@visx/axis";
 import { TooltipWithBounds, defaultStyles, useTooltip } from "@visx/tooltip";
-import { VoronoiPolygon, voronoi } from "@visx/voronoi";
 import { coerceNumber, scaleLinear, scaleTime } from "@visx/scale";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -9,6 +8,7 @@ import { Group } from "@visx/group";
 import { LinearGradient } from "@visx/gradient";
 import { localPoint } from "@visx/event";
 import { timeFormat } from "d3-time-format";
+import { voronoi } from "@visx/voronoi";
 
 const formatDate = timeFormat("%b '%y");
 const formatTime = (seconds) => {
@@ -47,6 +47,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
   const [xScale, setXScale] = useState(null);
   const [chartCircles, setChartCircles] = useState(null);
   const [ready, setReady] = useState(false);
+  const [hovered, setHovered] = useState(null);
   const svgRef = useRef(null);
   const { showTooltip, hideTooltip, tooltipLeft, tooltipTop, tooltipData, tooltipOpen } =
     useTooltip();
@@ -120,6 +121,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
       const neighborRadius = 100;
       const closest = voronoiLayout.find(point.x, point.y, neighborRadius);
       if (closest) {
+        setHovered(closest.data);
         const tooltipData = (
           <>
             {closest.data.info.title}
@@ -145,6 +147,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
     tooltipTimeout = window.setTimeout(() => {
       hideTooltip();
     }, 300);
+    setHovered(null);
   }, [hideTooltip]);
 
   const tooltipStyles = {
@@ -215,7 +218,18 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
             tickLength={4}
           />
         </g>
-        <Group pointerEvents="none">{chartCircles.map((Circle) => Circle)}</Group>
+        <Group pointerEvents="none">
+          {chartCircles.map((Circle) => Circle)}
+          {hovered && (
+            <Circle
+              className="dot"
+              cx={xScale(hovered.x)}
+              cy={yScale(hovered.y)}
+              r={1.5}
+              fill="white"
+            />
+          )}
+        </Group>
       </svg>
       {tooltipOpen && (
         <TooltipWithBounds
