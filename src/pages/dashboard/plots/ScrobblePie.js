@@ -391,7 +391,6 @@ const AnimatedPie = ({
   path,
   getKey,
   getColor,
-  isPreview,
   type,
   outerRadius,
   innerRadius = 0,
@@ -407,62 +406,45 @@ const AnimatedPie = ({
     keys: getKey,
   });
   return transitions((props, arc, { key }) => {
-    // const [centroidX, centroidY] = path.centroid(arc);
-    // const hasSpaceForName = arc.endAngle - arc.startAngle >= key.length / (isPreview ? 15 : 100);
-
     const center = (arc.startAngle + arc.endAngle) / 2;
-    // const rotationAngle =
-    //   center * (180 / Math.PI) + (center > Math.PI / 2 && center < (3 * Math.PI) / 2 ? 180 : 0);
-    // const flip = center > Math.PI / 2 && center < (3 * Math.PI) / 2;
 
     const hasSpaceForName =
-      key.length * 5 <
+      key.length * 5.75 <
       (center < Math.PI / 2 || center > (3 * Math.PI) / 2
         ? (arc.endAngle - arc.startAngle) * outerRadius
         : innerRadius > 0
         ? (arc.endAngle - arc.startAngle) * innerRadius
         : outerRadius);
 
-    // if (key === "Cashout") {
-    //   console.log("r", outerRadius);
-    //   console.log("l", key.length * 8);
-    //   console.log("dx", outerRadius - key.length * 8);
-    // }
-
-    if (key === "Fugazi") {
-      console.log(center > Math.PI / 2 && center < (3 * Math.PI) / 2);
-    }
-
     const dy =
       innerRadius > 0 &&
       center > Math.PI / 2 &&
       center < (3 * Math.PI) / 2 &&
-      arc.endAngle - arc.startAngle !== 2 * Math.PI
+      (arc.endAngle - arc.startAngle).toPrecision(5) !== (2 * Math.PI).toPrecision(5)
         ? (outerRadius - innerRadius) * 0.9 + "px"
         : "1em";
-
-    // const dx =
-    //   innerRadius === 0 && center < Math.PI ? outerRadius - key.length * 8 + "px" : "0.5em";
-
-    // const offset =
-    //   center < Math.PI / 2 || center > (3 * Math.PI) / 2
-    //     ? ""
-    //     : type === "track"
-    //     ? center > Math.PI
-    //       ? "23%"
-    //       : "64%"
-    //     : "53%";
 
     const offset =
       innerRadius > 0
         ? center > Math.PI / 2 &&
           center < (3 * Math.PI) / 2 &&
-          arc.endAngle - arc.startAngle !== 2 * Math.PI
-          ? "53%"
-          : ""
+          (arc.endAngle - arc.startAngle).toPrecision(5) !== (2 * Math.PI).toPrecision(5)
+          ? "88%"
+          : "2%"
         : center > Math.PI
-        ? "22%"
-        : `${99 - key.length * 1.6}%`;
+        ? "24%"
+        : "98%";
+
+    const textAnchor =
+      innerRadius > 0
+        ? center < Math.PI / 2 ||
+          center > (3 * Math.PI) / 2 ||
+          (arc.endAngle - arc.startAngle).toPrecision(5) === (2 * Math.PI).toPrecision(5)
+          ? "start"
+          : "end"
+        : center > Math.PI
+        ? "start"
+        : "end";
 
     return (
       <g key={key}>
@@ -483,22 +465,9 @@ const AnimatedPie = ({
         />
         {hasSpaceForName && (
           <animated.g style={{ opacity: props.opacity }}>
-            <path id={`${key}-curve`} d={path(arc)} fill="none" stroke="none" />
-            <text
-              fill="white"
-              // x={centroidX}
-              // y={centroidY}
-              dy={dy}
-              // dx={dx}
-              dx="1em"
-              // fontSize={9}
-              fontSize="0.55em"
-              // textAnchor="middle"
-              // transform={`rotate(${rotationAngle}, ${centroidX}, ${centroidY})`}
-              // transform={flip ? "scale(-1, -1)" : ""}
-              pointerEvents="none"
-            >
-              <textPath xlinkHref={`#${key}-curve`} startOffset={offset}>
+            <path id={`${type}-${key}-curve`} d={path(arc)} fill="none" stroke="none" />
+            <text fill="white" dy={dy} fontSize={10} textAnchor={textAnchor} pointerEvents="none">
+              <textPath xlinkHref={`#${type}-${key}-curve`} startOffset={offset}>
                 {key}
               </textPath>
             </text>
