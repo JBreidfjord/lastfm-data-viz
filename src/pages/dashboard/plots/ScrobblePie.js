@@ -289,6 +289,8 @@ export default function ScrobblePie({ data, width, height, isPreview }) {
                 type="artist"
                 animate={animate}
                 isPreview={isPreview}
+                outerRadius={radius}
+                innerRadius={radius - outerDonutThickness}
                 getKey={(arc) => arc.data.name}
                 onClickDatum={({ data: { name } }) => handleClick(name)}
                 getColor={(arc) => getArtistColor(arc.data.name)}
@@ -315,6 +317,8 @@ export default function ScrobblePie({ data, width, height, isPreview }) {
                 type="album"
                 animate={animate}
                 isPreview={isPreview}
+                outerRadius={radius - outerDonutThickness - gapSize}
+                innerRadius={radius - outerDonutThickness - gapSize - innerDonutThickness}
                 getKey={(arc) => arc.data.title}
                 getColor={(arc) => getAlbumColor(arc.data.title)}
                 onClickDatum={({ data: { artist, title } }) => handleClick(artist, title)}
@@ -338,6 +342,7 @@ export default function ScrobblePie({ data, width, height, isPreview }) {
                 type="track"
                 animate={animate}
                 isPreview={isPreview}
+                outerRadius={radius - outerDonutThickness - innerDonutThickness - gapSize * 2}
                 getKey={({ data: { title } }) => title}
                 getColor={({ data: { title } }) => getTrackColor(title)}
                 onClickDatum={({ data: { artist, album } }) => handleClick(artist, album)}
@@ -388,6 +393,8 @@ const AnimatedPie = ({
   getColor,
   isPreview,
   type,
+  outerRadius,
+  innerRadius = 0,
   onClickDatum = () => {},
   onMouseOverDatum = () => {},
   onMouseLeave = () => {},
@@ -401,24 +408,61 @@ const AnimatedPie = ({
   });
   return transitions((props, arc, { key }) => {
     // const [centroidX, centroidY] = path.centroid(arc);
-    const hasSpaceForName = arc.endAngle - arc.startAngle >= key.length / (isPreview ? 15 : 100);
+    // const hasSpaceForName = arc.endAngle - arc.startAngle >= key.length / (isPreview ? 15 : 100);
 
     const center = (arc.startAngle + arc.endAngle) / 2;
     // const rotationAngle =
     //   center * (180 / Math.PI) + (center > Math.PI / 2 && center < (3 * Math.PI) / 2 ? 180 : 0);
     // const flip = center > Math.PI / 2 && center < (3 * Math.PI) / 2;
-    if (key === "Arcarsenal") {
-      console.log(arc);
+
+    const hasSpaceForName =
+      key.length * 5 <
+      (center < Math.PI / 2 || center > (3 * Math.PI) / 2
+        ? (arc.endAngle - arc.startAngle) * outerRadius
+        : innerRadius > 0
+        ? (arc.endAngle - arc.startAngle) * innerRadius
+        : outerRadius);
+
+    // if (key === "Cashout") {
+    //   console.log("r", outerRadius);
+    //   console.log("l", key.length * 8);
+    //   console.log("dx", outerRadius - key.length * 8);
+    // }
+
+    if (key === "Fugazi") {
+      console.log(center > Math.PI / 2 && center < (3 * Math.PI) / 2);
     }
 
+    const dy =
+      innerRadius > 0 &&
+      center > Math.PI / 2 &&
+      center < (3 * Math.PI) / 2 &&
+      arc.endAngle - arc.startAngle !== 2 * Math.PI
+        ? (outerRadius - innerRadius) * 0.9 + "px"
+        : "1em";
+
+    // const dx =
+    //   innerRadius === 0 && center < Math.PI ? outerRadius - key.length * 8 + "px" : "0.5em";
+
+    // const offset =
+    //   center < Math.PI / 2 || center > (3 * Math.PI) / 2
+    //     ? ""
+    //     : type === "track"
+    //     ? center > Math.PI
+    //       ? "23%"
+    //       : "64%"
+    //     : "53%";
+
     const offset =
-      center < Math.PI / 2 || center > (3 * Math.PI) / 2
-        ? ""
-        : type === "track"
-        ? center > Math.PI
-          ? "23%"
-          : "64%"
-        : "53%";
+      innerRadius > 0
+        ? center > Math.PI / 2 &&
+          center < (3 * Math.PI) / 2 &&
+          arc.endAngle - arc.startAngle !== 2 * Math.PI
+          ? "53%"
+          : ""
+        : center > Math.PI
+        ? "22%"
+        : `${99 - key.length * 1.6}%`;
 
     return (
       <g key={key}>
@@ -444,9 +488,11 @@ const AnimatedPie = ({
               fill="white"
               // x={centroidX}
               // y={centroidY}
-              dy="1em"
-              dx="0.5em"
-              fontSize={9}
+              dy={dy}
+              // dx={dx}
+              dx="1em"
+              // fontSize={9}
+              fontSize="0.55em"
               // textAnchor="middle"
               // transform={`rotate(${rotationAngle}, ${centroidX}, ${centroidY})`}
               // transform={flip ? "scale(-1, -1)" : ""}
