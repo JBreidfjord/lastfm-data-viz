@@ -9,7 +9,7 @@ import Spinner from "../../../components/Spinner";
 import { localPoint } from "@visx/event";
 import { scaleOrdinal } from "@visx/scale";
 
-export default function ScrobblePie({ data, width, height }) {
+export default function ScrobblePie({ data, width, height, isPreview }) {
   const [artists, setArtists] = useState(null);
   const [albums, setAlbums] = useState(null);
   const [tracks, setTracks] = useState(null);
@@ -24,7 +24,7 @@ export default function ScrobblePie({ data, width, height }) {
   const { showTooltip, hideTooltip, tooltipLeft, tooltipTop, tooltipData, tooltipOpen } =
     useTooltip();
 
-  const n = 10;
+  const n = isPreview ? 5 : 15;
 
   useEffect(() => {
     let artists = {};
@@ -162,7 +162,7 @@ export default function ScrobblePie({ data, width, height }) {
         })
       );
     }
-  }, [activeArtists, activeAlbums, activeTracks]);
+  }, [activeArtists, activeAlbums, activeTracks, n]);
 
   const handleMouseOver = (e, data, type) => {
     const coords = localPoint(e.target.ownerSVGElement, e);
@@ -264,9 +264,9 @@ export default function ScrobblePie({ data, width, height }) {
   const radius = Math.min(innerWidth, innerHeight) / 2;
   const centerX = innerWidth / 2;
   const centerY = innerHeight / 2;
-  const outerDonutThickness = 40;
-  const innerDonutThickness = 40;
-  const gapSize = 10;
+  const outerDonutThickness = innerHeight / 15;
+  const innerDonutThickness = innerHeight / 15;
+  const gapSize = innerHeight / 60;
 
   return activeArtists && activeAlbums && getArtistColor && getAlbumColor ? (
     <>
@@ -286,7 +286,11 @@ export default function ScrobblePie({ data, width, height }) {
             {(pie) => (
               <AnimatedPie
                 {...pie}
+                type="artist"
                 animate={animate}
+                isPreview={isPreview}
+                outerRadius={radius}
+                innerRadius={radius - outerDonutThickness}
                 getKey={(arc) => arc.data.name}
                 onClickDatum={({ data: { name } }) => handleClick(name)}
                 getColor={(arc) => getArtistColor(arc.data.name)}
@@ -310,7 +314,11 @@ export default function ScrobblePie({ data, width, height }) {
             {(pie) => (
               <AnimatedPie
                 {...pie}
+                type="album"
                 animate={animate}
+                isPreview={isPreview}
+                outerRadius={radius - outerDonutThickness - gapSize}
+                innerRadius={radius - outerDonutThickness - gapSize - innerDonutThickness}
                 getKey={(arc) => arc.data.title}
                 getColor={(arc) => getAlbumColor(arc.data.title)}
                 onClickDatum={({ data: { artist, title } }) => handleClick(artist, title)}
@@ -331,7 +339,10 @@ export default function ScrobblePie({ data, width, height }) {
             {(pie) => (
               <AnimatedPie
                 {...pie}
+                type="track"
                 animate={animate}
+                isPreview={isPreview}
+                outerRadius={radius - outerDonutThickness - innerDonutThickness - gapSize * 2}
                 getKey={({ data: { title } }) => title}
                 getColor={({ data: { title } }) => getTrackColor(title)}
                 onClickDatum={({ data: { artist, album } }) => handleClick(artist, album)}
@@ -380,6 +391,9 @@ const AnimatedPie = ({
   path,
   getKey,
   getColor,
+  type,
+  outerRadius,
+  innerRadius = 0,
   onClickDatum = () => {},
   onMouseOverDatum = () => {},
   onMouseLeave = () => {},
@@ -392,8 +406,35 @@ const AnimatedPie = ({
     keys: getKey,
   });
   return transitions((props, arc, { key }) => {
-    const [centroidX, centroidY] = path.centroid(arc);
-    const hasSpaceForName = arc.endAngle - arc.startAngle >= key.length / 25;
+    const center = (arc.startAngle + arc.endAngle) / 2;
+
+    const isBottom =
+      center > Math.PI / 2 &&
+      arc.startAngle < (3 * Math.PI) / 2 &&
+      (arc.endAngle - arc.startAngle).toPrecision(5) !== (2 * Math.PI).toPrecision(5);
+
+    const hasSpaceForName =
+      key.length * 6.75 <
+      (innerRadius > 0 ? (arc.endAngle - arc.startAngle) * outerRadius : outerRadius);
+
+    const dy = innerRadius > 0 && isBottom ? (outerRadius - innerRadius) * 0.9 + "px" : "1em";
+
+    const totalLength =
+      (arc.endAngle - arc.startAngle) * outerRadius +
+      (arc.endAngle - arc.startAngle) * innerRadius +
+      2 * (outerRadius - innerRadius);
+
+    const offset =
+      innerRadius > 0
+        ? isBottom
+          ? (totalLength - (outerRadius - innerRadius)) * 0.975
+          : (arc.endAngle - arc.startAngle) * outerRadius * 0.02
+        : center > Math.PI
+        ? (arc.endAngle - arc.startAngle) * outerRadius * 1.02
+        : totalLength * 0.99;
+
+    const textAnchor =
+      innerRadius > 0 ? (isBottom ? "end" : "start") : center > Math.PI ? "start" : "end";
 
     return (
       <g key={key}>
@@ -414,16 +455,11 @@ const AnimatedPie = ({
         />
         {hasSpaceForName && (
           <animated.g style={{ opacity: props.opacity }}>
-            <text
-              fill="white"
-              x={centroidX}
-              y={centroidY}
-              dy="0.33em"
-              fontSize={9}
-              textAnchor="middle"
-              pointerEvents="none"
-            >
-              {getKey(arc)}
+            <path id={`${type}-${key}-curve`} d={path(arc)} fill="none" stroke="none" />
+            <text fill="white" dy={dy} fontSize={10} textAnchor={textAnchor} pointerEvents="none">
+              <textPath xlinkHref={`#${type}-${key}-curve`} startOffset={offset}>
+                {key}
+              </textPath>
             </text>
           </animated.g>
         )}
