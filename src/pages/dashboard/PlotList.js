@@ -1,21 +1,15 @@
 import "./PlotList.css";
 
+import HistoryGrid from "./plots/HistoryGrid";
 import Open from "../../assets/open_fullscreen.svg";
 import { ParentSize } from "@visx/responsive";
 import ScrobblePie from "./plots/ScrobblePie";
 import { useState } from "react";
 
 export default function PlotList({ data, handleFocus }) {
-  const plots = [
-    <ParentSize>
-      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
-    </ParentSize>,
-    <ParentSize>
-      {({ width, height }) => <ScrobblePie data={data} width={width} height={height} />}
-    </ParentSize>,
-  ];
+  const Plots = [ScrobblePie, HistoryGrid];
 
-  const [showInfo, setShowInfo] = useState(plots.map(() => false));
+  const [showInfo, setShowInfo] = useState(Plots.map(() => false));
 
   let timeout;
   const handleMove = (i) => {
@@ -31,25 +25,33 @@ export default function PlotList({ data, handleFocus }) {
     setShowInfo((prevShowInfo) => prevShowInfo.map((prev, j) => (j === i ? false : prev)));
   };
 
+  const getElem = (Elem, isPreview) => {
+    return (
+      <ParentSize>
+        {({ width, height }) => (
+          <Elem data={data} width={width} height={height} isPreview={isPreview} />
+        )}
+      </ParentSize>
+    );
+  };
+
   return (
     <div className="plot-list">
-      {plots.map((plot, i) => (
-        <>
-          <div
-            className="plot"
-            key={i}
-            onMouseMove={() => handleMove(i)}
-            onMouseLeave={() => handleLeave(i)}
-          >
-            {plot}
-            <img
-              src={Open}
-              onClick={() => handleFocus(plot)}
-              className={"fullscreen-icon open" + (showInfo[i] ? " visible" : " hidden")}
-              alt="Open Fullscreen"
-            />
-          </div>
-        </>
+      {Plots.map((Plot, i) => (
+        <div
+          className="plot"
+          key={i}
+          onMouseMove={() => handleMove(i)}
+          onMouseLeave={() => handleLeave(i)}
+        >
+          {getElem(Plot, true)}
+          <img
+            src={Open}
+            onClick={() => handleFocus(getElem(Plot, false))}
+            className={"fullscreen-icon open" + (showInfo[i] ? " visible" : " hidden")}
+            alt="Open Fullscreen"
+          />
+        </div>
       ))}
     </div>
   );
