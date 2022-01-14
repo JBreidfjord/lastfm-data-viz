@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle } from "@visx/shape";
 import { Group } from "@visx/group";
 import { LinearGradient } from "@visx/gradient";
+import Spinner from "../../../components/Spinner";
 import { localPoint } from "@visx/event";
 import { timeFormat } from "d3-time-format";
 import { voronoi } from "@visx/voronoi";
@@ -283,7 +284,6 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
       )}
     </>
   ) : (
-    <>Loading...</>
-    // <Spinner />
+    <Spinner />
   );
 }
