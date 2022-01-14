@@ -9,7 +9,7 @@ import Spinner from "../../../components/Spinner";
 import { localPoint } from "@visx/event";
 import { scaleOrdinal } from "@visx/scale";
 
-export default function ScrobblePie({ data, width, height }) {
+export default function ScrobblePie({ data, width, height, isPreview }) {
   const [artists, setArtists] = useState(null);
   const [albums, setAlbums] = useState(null);
   const [tracks, setTracks] = useState(null);
@@ -264,9 +264,9 @@ export default function ScrobblePie({ data, width, height }) {
   const radius = Math.min(innerWidth, innerHeight) / 2;
   const centerX = innerWidth / 2;
   const centerY = innerHeight / 2;
-  const outerDonutThickness = 40;
-  const innerDonutThickness = 40;
-  const gapSize = 10;
+  const outerDonutThickness = innerHeight / 15;
+  const innerDonutThickness = innerHeight / 15;
+  const gapSize = innerHeight / 60;
 
   return activeArtists && activeAlbums && getArtistColor && getAlbumColor ? (
     <>
@@ -286,7 +286,9 @@ export default function ScrobblePie({ data, width, height }) {
             {(pie) => (
               <AnimatedPie
                 {...pie}
+                type="artist"
                 animate={animate}
+                isPreview={isPreview}
                 getKey={(arc) => arc.data.name}
                 onClickDatum={({ data: { name } }) => handleClick(name)}
                 getColor={(arc) => getArtistColor(arc.data.name)}
@@ -310,7 +312,9 @@ export default function ScrobblePie({ data, width, height }) {
             {(pie) => (
               <AnimatedPie
                 {...pie}
+                type="album"
                 animate={animate}
+                isPreview={isPreview}
                 getKey={(arc) => arc.data.title}
                 getColor={(arc) => getAlbumColor(arc.data.title)}
                 onClickDatum={({ data: { artist, title } }) => handleClick(artist, title)}
@@ -331,7 +335,9 @@ export default function ScrobblePie({ data, width, height }) {
             {(pie) => (
               <AnimatedPie
                 {...pie}
+                type="track"
                 animate={animate}
+                isPreview={isPreview}
                 getKey={({ data: { title } }) => title}
                 getColor={({ data: { title } }) => getTrackColor(title)}
                 onClickDatum={({ data: { artist, album } }) => handleClick(artist, album)}
@@ -380,6 +386,8 @@ const AnimatedPie = ({
   path,
   getKey,
   getColor,
+  isPreview,
+  type,
   onClickDatum = () => {},
   onMouseOverDatum = () => {},
   onMouseLeave = () => {},
@@ -392,8 +400,25 @@ const AnimatedPie = ({
     keys: getKey,
   });
   return transitions((props, arc, { key }) => {
-    const [centroidX, centroidY] = path.centroid(arc);
-    const hasSpaceForName = arc.endAngle - arc.startAngle >= key.length / 25;
+    // const [centroidX, centroidY] = path.centroid(arc);
+    const hasSpaceForName = arc.endAngle - arc.startAngle >= key.length / (isPreview ? 15 : 100);
+
+    const center = (arc.startAngle + arc.endAngle) / 2;
+    // const rotationAngle =
+    //   center * (180 / Math.PI) + (center > Math.PI / 2 && center < (3 * Math.PI) / 2 ? 180 : 0);
+    // const flip = center > Math.PI / 2 && center < (3 * Math.PI) / 2;
+    if (key === "Arcarsenal") {
+      console.log(arc);
+    }
+
+    const offset =
+      center < Math.PI / 2 || center > (3 * Math.PI) / 2
+        ? ""
+        : type === "track"
+        ? center > Math.PI
+          ? "23%"
+          : "64%"
+        : "53%";
 
     return (
       <g key={key}>
@@ -414,16 +439,22 @@ const AnimatedPie = ({
         />
         {hasSpaceForName && (
           <animated.g style={{ opacity: props.opacity }}>
+            <path id={`${key}-curve`} d={path(arc)} fill="none" stroke="none" />
             <text
               fill="white"
-              x={centroidX}
-              y={centroidY}
-              dy="0.33em"
+              // x={centroidX}
+              // y={centroidY}
+              dy="1em"
+              dx="0.5em"
               fontSize={9}
-              textAnchor="middle"
+              // textAnchor="middle"
+              // transform={`rotate(${rotationAngle}, ${centroidX}, ${centroidY})`}
+              // transform={flip ? "scale(-1, -1)" : ""}
               pointerEvents="none"
             >
-              {getKey(arc)}
+              <textPath xlinkHref={`#${key}-curve`} startOffset={offset}>
+                {key}
+              </textPath>
             </text>
           </animated.g>
         )}
