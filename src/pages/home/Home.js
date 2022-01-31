@@ -14,7 +14,7 @@ const initialInfoState = {
   page: 0,
   totalPages: 0,
   totalTracks: 0,
-  user: "",
+  user: "jbreidfjord", // Sets default input value for demo purposes
   url: "",
   fetchFromDate: 0,
   fetching: false,
@@ -186,7 +186,7 @@ export default function Home({ setScrobbleData, scrobbleData }) {
 
   return (
     <div className="home">
-      <h2>Data Viz</h2>
+      <h2>Last.FM Data Visualizer</h2>
       <form onSubmit={handleSubmit}>
         <label>
           <span>Last.FM Username</span>
