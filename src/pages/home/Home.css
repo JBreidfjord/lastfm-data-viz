@@ -17,3 +17,8 @@
   margin: auto;
   margin-left: 0;
 }
+
+.home {
+  max-width: 720px;
+  margin: auto;
+}

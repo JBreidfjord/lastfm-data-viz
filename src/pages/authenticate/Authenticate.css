@@ -35,10 +35,13 @@
   padding: 0;
   cursor: pointer;
   color: var(--heading-color);
+  background-color: #edecfc;
+  border-bottom: 1px solid var(--primary-color);
 }
 
 .auth .tab.active {
-  background-color: #edecfc;
-  color: var(--primary-color);
-  border-bottom: 1px solid var(--primary-color);
+  color: var(--heading-color);
+  cursor: default;
+  background-color: inherit;
+  border-bottom: none;
 }
