@@ -273,7 +273,11 @@ export default function ScrobblePie({ data, width, height, isPreview }) {
       <svg width={width} height={height}>
         <GradientSteelPurple id="album-artist-pie-gradient" />
         <rect rx={14} width={width} height={height} fill="url('#album-artist-pie-gradient')" />
-        <Group top={centerY + margin.top} left={centerX + margin.left}>
+        <Group
+          top={centerY + margin.top}
+          left={centerX + margin.left}
+          style={{ cursor: "pointer" }}
+        >
           {/* Artists - Outer Donut */}
           <Pie
             data={activeArtists.slice(-n)}
