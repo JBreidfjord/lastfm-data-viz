@@ -58,7 +58,7 @@ export default function HistoryGrid({ data, width, height, isPreview }) {
     useTooltip();
 
   useEffect(() => {
-    const targetLength = isPreview ? 3000 : 100000; // Limit to 100k for performance
+    const targetLength = isPreview ? 3000 : 80000; // Limit to 80k for performance
     const filterProb = targetLength / data.scrobbles.length;
     const filteredScrobbles =
       data.scrobbles.length > targetLength
